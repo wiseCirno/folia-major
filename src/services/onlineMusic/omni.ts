@@ -1,6 +1,6 @@
 import { DEFAULT_PERSONAL_FM_CATALOG } from './fmModes';
-import type { PersonalFmCatalog } from '../../types/personalFm';
-import type { SongResult, UnifiedSong } from '../../types';
+import type { PersonalFmCatalog } from '@/types/personalFm.ts';
+import type { SongResult, UnifiedSong } from '@/types.ts';
 import type {
     AudioQualityPreference,
     DailyStyleGroup,
@@ -52,12 +52,12 @@ import type {
     RecommendationPreferenceEntry,
     RecommendationPreferences,
     RecommendationPreferencesSaveResult,
-} from '../../types/onlineMusic';
-import { resolveProviderLyricsChorus } from '../../utils/lyrics/chorusResolver';
-import { DEFAULT_ONLINE_PROVIDER_ID, OnlineProviderError } from '../../types/onlineMusic';
-import { useOnlineProviderAccountStore } from '../../stores/useOnlineProviderAccountStore';
-import { getPlaybackSourceRef } from '../../utils/appPlaybackGuards';
-import { toSafePlaybackUrl } from '../../utils/appPlaybackHelpers';
+} from '@/types/onlineMusic.ts';
+import { resolveProviderLyricsChorus } from '@/utils/lyrics/chorusResolver.ts';
+import { DEFAULT_ONLINE_PROVIDER_ID, OnlineProviderError } from '@/types/onlineMusic.ts';
+import { useOnlineProviderAccountStore } from '@/stores/useOnlineProviderAccountStore.ts';
+import { getPlaybackSourceRef } from '@/utils/appPlaybackGuards.ts';
+import { toSafePlaybackUrl } from '@/utils/appPlaybackHelpers.ts';
 import { saveSongReplayGain } from './resourceCache';
 import {
     canPlaySongExternally,
@@ -76,12 +76,12 @@ import {
     readRecommendationPreferenceEntries,
 } from './recommendationPreferences';
 import { applyOmniAudioHook, applyOmniLyricsHook } from '../hostExtensionHooks';
-import { createLikePresses } from '../../utils/likePresses';
-import type { LikePress, LikePresses } from '../../utils/likePresses';
+import { createLikePresses } from '@/utils/likePresses.ts';
+import type { LikePress, LikePresses } from '@/utils/likePresses.ts';
 import { noteLoginFailure } from './login/loginFailureCase';
 import { noteOnlineFailure } from './failure/onlineFailureCase';
 import { diagnosticLine } from './login/loginDiagnosticReport';
-import { errorFields, errorMessage } from '../../utils/errorText';
+import { errorFields, errorMessage } from '@/utils/errorText.ts';
 import { keptAfterRead } from './account/keptAfterRead';
 import type { AccountRead } from './account/keptAfterRead';
 import { createLikedChecks } from './account/likedChecks';
@@ -152,8 +152,10 @@ const noteAudioSourceLevel = (url: string, handedOut: HandedOutAudioSource): voi
 
 const activeProviderId = (): OmniProviderId => {
     const storedProviderId = useOnlineProviderAccountStore.getState().activeProviderId;
-    // A persisted selection can outlive its provider when switching builds or branches.
-    return getOnlineMusicProvider(storedProviderId) ? storedProviderId : DEFAULT_ONLINE_PROVIDER_ID;
+    if (getOnlineMusicProvider(storedProviderId)) return storedProviderId;
+    // A persisted selection can outlive its provider when a build pins a different platform.
+    if (getOnlineMusicProvider(DEFAULT_ONLINE_PROVIDER_ID)) return DEFAULT_ONLINE_PROVIDER_ID;
+    return listOnlineMusicProviders()[0]?.id ?? storedProviderId;
 };
 
 const activeProvider = () => requireOnlineMusicProvider(activeProviderId());
