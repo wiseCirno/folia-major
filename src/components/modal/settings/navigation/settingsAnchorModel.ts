@@ -80,24 +80,14 @@ export const SETTINGS_ANCHOR_DEFINITIONS = {
     // pages/StoragePage (backup and import)
     importExportTitle: { section: 'storage' },
 
-    // pages/DesktopPage, and the update check on pages/GeneralPage
-    desktopTrayBehavior: { section: 'desktop' },
-    wallpaperMode: { section: 'desktop' },
+    // The update check on pages/GeneralPage
     updateCheck: { section: 'general' },
-
-    // pages/RemotePage (desktop app only)
-    remoteControl: { section: 'remote' },
-    remoteLyrics: { section: 'remote' },
 
     // pages/GraphicsPage; the render GPU row only in the Windows desktop app.
     graphicsPerformance: { section: 'graphics' },
     graphicsMotion: { section: 'graphics' },
     gpuPreference: { section: 'graphics' },
     lyricRenderScale: { section: 'graphics' },
-
-    // pages/ModsPage
-    modSystem: { section: 'mods' },
-    modList: { section: 'mods' },
 } as const satisfies Record<string, { section: SettingsSubviewId }>;
 
 export type SettingsAnchorId = keyof typeof SETTINGS_ANCHOR_DEFINITIONS;

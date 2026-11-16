@@ -1,9 +1,8 @@
 import i18n from '@/i18n/config';
 import type { StatusMessage } from '@/types';
-import { settingsAnchorSubview } from '@/components/modal/settings/navigation/settingsAnchorModel';
 import { openSettings } from '@/stores/useSettingsModalStore';
 import { setStatusMessage, useStatusMessageStore } from '@/stores/useStatusMessageStore';
-import { modSettingsRowId, useModsStore } from '../useModsStore';
+import { useModsStore } from '../useModsStore';
 import { FOLIUM_START_LIMIT_MS, foliumModName } from './clientLoader';
 import { FOLIUM_ENTRY_NOTICE_WORDS } from '../folium/kinds';
 import { setFoliumFaultNoticeMuted, setFoliumFaultNotifier, type FoliumNoticeKind } from './status';
@@ -63,7 +62,7 @@ const openModRow = async (modId: string) => {
         // Without the list the window still opens on the mods page.
     }
     useModsStore.getState().selectMod(modId);
-    openSettings('options', settingsAnchorSubview('modList'), null, 'modList', modSettingsRowId(modId));
+    openSettings('options', 'general');
 };
 
 const show = ({ modId, piece, shows }: PendingNotice) => {

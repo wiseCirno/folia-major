@@ -8,7 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       force_republish:
-        description: 'Allow rebuilding an existing version tag after a partial or broken publish'
+        description: >-
+          Allow rebuilding an existing version tag
+          after a partial or broken publish
         required: false
         type: boolean
         default: false
@@ -51,9 +53,12 @@ jobs:
           fi
           VERSION="$(./deploy/docker/scripts/validate-version.sh)"
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
-            PREVIOUS_VERSION="$(git show HEAD^:deploy/docker/VERSION 2>/dev/null || true)"
+            PREVIOUS_VERSION="$(git show \
+              HEAD^:deploy/docker/VERSION 2>/dev/null || true)"
             if [[ -n "${PREVIOUS_VERSION}" ]]; then
-              ./deploy/docker/scripts/validate-version.sh deploy/docker/VERSION "${PREVIOUS_VERSION}" >/dev/null
+              ./deploy/docker/scripts/validate-version.sh \
+                deploy/docker/VERSION \
+                "${PREVIOUS_VERSION}" >/dev/null
             fi
           fi
           if [[ -z "${IMAGE_NAMESPACE}" ]]; then
@@ -61,9 +66,12 @@ jobs:
             exit 1
           fi
           if [[ "${FORCE_REPUBLISH}" != "true" ]]; then
-            for image in folia-web folia-web-api folia-netease-api folia-kugou-api folia-qq-api; do
-              if docker manifest inspect "docker.io/${IMAGE_NAMESPACE}/${image}:${VERSION}" >/dev/null 2>&1; then
-                echo "${image}:${VERSION} already exists. Use force_republish only for recovery." >&2
+            for image in folia-web folia-web-api; do
+              if docker manifest inspect \
+                "docker.io/${IMAGE_NAMESPACE}/${image}:${VERSION}" \
+                >/dev/null 2>&1; then
+                echo "${image}:${VERSION} already exists." >&2
+                echo "Use force_republish only for recovery." >&2
                 exit 1
               fi
             done
@@ -101,36 +109,6 @@ jobs:
             arch: arm64
             platform: linux/arm64
             runner: ubuntu-24.04-arm
-          - image: folia-netease-api
-            dockerfile: deploy/docker/images/netease-api.Dockerfile
-            arch: amd64
-            platform: linux/amd64
-            runner: ubuntu-24.04
-          - image: folia-netease-api
-            dockerfile: deploy/docker/images/netease-api.Dockerfile
-            arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
-          - image: folia-kugou-api
-            dockerfile: deploy/docker/images/kugou-api.Dockerfile
-            arch: amd64
-            platform: linux/amd64
-            runner: ubuntu-24.04
-          - image: folia-kugou-api
-            dockerfile: deploy/docker/images/kugou-api.Dockerfile
-            arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
-          - image: folia-qq-api
-            dockerfile: deploy/docker/images/qq-api.Dockerfile
-            arch: amd64
-            platform: linux/amd64
-            runner: ubuntu-24.04
-          - image: folia-qq-api
-            dockerfile: deploy/docker/images/qq-api.Dockerfile
-            arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
 
     steps:
       - name: Check out repository
@@ -145,6 +123,24 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Name the architecture image
+        id: image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_NAME: ${{ matrix.image }}
+          IMAGE_VERSION: ${{ needs.prepare.outputs.version }}
+          IMAGE_ARCH: ${{ matrix.arch }}
+          IMAGE_CREATED: ${{ needs.prepare.outputs.created }}
+          OCI_SOURCE: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          tag="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME}"
+          tag="${tag}:${IMAGE_VERSION}-${IMAGE_ARCH}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "scope=${IMAGE_NAME}-${IMAGE_ARCH}" >> "$GITHUB_OUTPUT"
+          echo "ver=${IMAGE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "created=${IMAGE_CREATED}" >> "$GITHUB_OUTPUT"
+          echo "source=${OCI_SOURCE}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push architecture image
         uses: docker/build-push-action@v7
         with:
@@ -157,14 +153,14 @@ jobs:
             STACK_VERSION=${{ needs.prepare.outputs.version }}
             REQUIRE_COMMIT_NAME=true
             GITHUB_REPOSITORY=${{ github.repository }}
-          tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ needs.prepare.outputs.version }}-${{ matrix.arch }}
+          tags: ${{ steps.image.outputs.tag }}
           labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.source=${{ steps.image.outputs.source }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
-            org.opencontainers.image.created=${{ needs.prepare.outputs.created }}
-          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-${{ matrix.arch }}
+            org.opencontainers.image.version=${{ steps.image.outputs.ver }}
+            org.opencontainers.image.created=${{ steps.image.outputs.created }}
+          cache-from: type=gha,scope=${{ steps.image.outputs.scope }}
+          cache-to: type=gha,mode=max,scope=${{ steps.image.outputs.scope }}
 
   promote:
     name: Promote Docker stack tags
@@ -188,7 +184,7 @@ jobs:
           MAJOR: ${{ needs.prepare.outputs.major }}
           MINOR: ${{ needs.prepare.outputs.minor }}
         run: |
-          for image in folia-web folia-web-api folia-netease-api folia-kugou-api folia-qq-api; do
+          for image in folia-web folia-web-api; do
             source="docker.io/${IMAGE_NAMESPACE}/${image}:${VERSION}"
             docker buildx imagetools create \
               --tag "${source}" \

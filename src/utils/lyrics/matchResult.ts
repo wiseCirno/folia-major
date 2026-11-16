@@ -1,4 +1,4 @@
-import type { AmllDbPlatform, LyricProviderSource, SongResult } from '../../types';
+import type { AmllDbPlatform, LyricProviderSource, RememberedLyricSource, SongResult } from '../../types';
 import { getLyricProviderLabel } from './lyricSourceLabels';
 import { getPlatformLyricSource } from './lyricSources';
 import { getProviderSongMetadata } from '../../services/onlineMusic/songMetadata';
@@ -9,7 +9,7 @@ import { getProviderSongMetadata } from '../../services/onlineMusic/songMetadata
 export type LyricMatchSource = LyricProviderSource;
 
 export const getLyricMatchSourceLabel = (
-    source: LyricMatchSource,
+    source: RememberedLyricSource,
     platform?: AmllDbPlatform | null,
 ): string => getLyricProviderLabel(source, platform);
 

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { SongResult } from '../types';
 import { omni } from '../services/onlineMusic/omni';
-import { getPlaybackSourceRef } from '../utils/appPlaybackGuards';
+import { getPlaybackSourceRef, isNavidromePlaybackSource } from '../utils/appPlaybackGuards';
 
 // src/stores/useAddToPlaylistStore.ts
 // The "add the current song to a playlist" dialog: whether it is up, and whether it could do
@@ -58,6 +58,6 @@ export const openAddSongsToPlaylist = (songs: SongResult[]) => useAddToPlaylistS
  */
 export const canOpenPlaylistPickerFor = (song: SongResult): boolean => {
     const source = getPlaybackSourceRef(song);
-    if (source.kind === 'local' || source.kind === 'navidrome') return true;
+    if (source.kind === 'local' || isNavidromePlaybackSource(source)) return true;
     return source.kind === 'online' && (omni.canAddSongToPlaylist(song) || omni.canLikeSong(song));
 };

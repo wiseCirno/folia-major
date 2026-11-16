@@ -6,9 +6,23 @@ import type { OnlineProviderId, PlaybackSourceRef } from '../types/onlineMusic';
 // Runtime guards for the unified playback song model.
 export type PlaybackSongSource = OnlineProviderId | 'local' | 'navidrome' | 'stage';
 
+export const NAVIDROME_PROVIDER_ID = 'navidrome';
+
 export const isNavidromePlaybackSong = (song: SongResult | null | undefined): song is NavidromeSong => {
     return Boolean(song && (song as any).isNavidrome === true);
 };
+
+/** 旧的 `kind: 'navidrome'` 和收进 Omni 之后的 `online:navidrome` 是同一条来源。 */
+export const isNavidromePlaybackSource = (
+    source: PlaybackSourceRef | null | undefined,
+): boolean => source?.kind === 'navidrome'
+    || (source?.kind === 'online' && source.providerId === NAVIDROME_PROVIDER_ID);
+
+const navidromeOnlineRef = (mediaId: string): PlaybackSourceRef => ({
+    kind: 'online',
+    providerId: NAVIDROME_PROVIDER_ID,
+    mediaId,
+});
 
 export const resolveNavidromePlaybackCarrier = (
     song: SongResult | NavidromeSong | null | undefined
@@ -47,12 +61,15 @@ export const isStagePlaybackSong = (song: SongResult | null | undefined): boolea
 };
 
 export const getPlaybackSourceRef = (song: SongResult): PlaybackSourceRef => {
+    if (song.sourceRef?.kind === 'navidrome') {
+        return navidromeOnlineRef(String(song.sourceRef.mediaId || song.id));
+    }
     if (song.sourceRef) return song.sourceRef;
     if (isStagePlaybackSong(song)) return { kind: 'stage', mediaId: String(song.id) };
     if (isLocalPlaybackSong(song)) return { kind: 'local', mediaId: song.localRef.songId };
     if (isNavidromePlaybackSong(song)) {
         const carrier = resolveNavidromePlaybackCarrier(song);
-        return { kind: 'navidrome', mediaId: String(carrier?.navidromeData.id || song.id) };
+        return navidromeOnlineRef(String(carrier?.navidromeData.id || song.id));
     }
     const isLegacyCloudSong = song.sourceType === 'cloud' || song.t === 1 || song.t === 2;
     const providerId: OnlineProviderId = (song as any).providerId || 'netease';

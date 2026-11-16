@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { LucideIcon } from 'lucide-react';
 import type { SongResult } from '../../../types';
 import { omni } from '../../../services/onlineMusic/omni';
-import { getPlaybackSourceRef } from '../../../utils/appPlaybackGuards';
+import { getPlaybackSourceRef, isNavidromePlaybackSource } from '../../../utils/appPlaybackGuards';
 import { canOpenPlaylistPickerFor } from '../../../stores/useAddToPlaylistStore';
 
 // src/components/app/scratchpad/scratchpadModel.ts
@@ -11,8 +11,8 @@ import { canOpenPlaylistPickerFor } from '../../../stores/useAddToPlaylistStore'
 /** 来源的称呼（组头与行上的小标签）。 */
 export const scratchpadSourceLabel = (song: SongResult, t: TFunction): string => {
     const source = getPlaybackSourceRef(song);
+    if (isNavidromePlaybackSource(source)) return t('navidrome.title');
     if (source.kind === 'online') return omni.getProviderLabel(source.providerId);
-    if (source.kind === 'navidrome') return t('navidrome.title');
     return t('scratchpad.sourceLocal');
 };
 

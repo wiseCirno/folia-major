@@ -1,5 +1,5 @@
 import type { SongResult, UnifiedSong } from '../../types';
-import { getPlaybackSourceRef } from '../../utils/appPlaybackGuards';
+import { getPlaybackSourceRef, isNavidromePlaybackSource } from '../../utils/appPlaybackGuards';
 import { getProviderSongMetadata } from '../onlineMusic/songMetadata';
 
 // src/services/sync/syncFingerprint.ts
@@ -77,7 +77,9 @@ export const createSongSyncFingerprint = (song: SongResult | null) => {
 
     const sourceKind = getSongSourceKind(song);
     const sourceRef = getPlaybackSourceRef(song);
-    if (sourceRef.kind === 'online') {
+    // Navidrome stays on the title fingerprint. Its media id is the server's, and themes
+    // already synced under the old kind must still find the same song.
+    if (sourceRef.kind === 'online' && !isNavidromePlaybackSource(sourceRef)) {
         return `${sourceRef.providerId}:id:${sourceRef.mediaId}`;
     }
 

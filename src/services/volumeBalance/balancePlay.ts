@@ -1,5 +1,5 @@
 import type { ReplayGainInfo, SongResult } from '../../types';
-import { getPlaybackSongKey, getPlaybackSourceRef } from '../../utils/appPlaybackGuards';
+import { getPlaybackSongKey, getPlaybackSourceRef, isNavidromePlaybackSource } from '../../utils/appPlaybackGuards';
 import { toFiniteNumber } from '../../utils/replayGain';
 import { rampGain, type AutomixDeckChain } from '../automix/crossfadeGraph';
 import { getTrackProfile } from '../automix/profileService';
@@ -75,11 +75,11 @@ const inputsFor = (song: SongResult, info: ReplayGainInfo | undefined, chain: Au
         file: record?.file,
         played: record?.played,
         profile: wholeProfile ? { loudness: program, peak: profile?.peak } : null,
-        tag: (source.kind === 'local' || source.kind === 'navidrome') && trackGain !== undefined
+        tag: (source.kind === 'local' || isNavidromePlaybackSource(source)) && trackGain !== undefined
             ? { gainDb: trackGain, peak: toFiniteNumber(info?.trackPeak) }
             : null,
         head: wholeProfile ? null : program,
-        platformDb: source.kind === 'online' ? trackGain ?? null : null,
+        platformDb: source.kind === 'online' && !isNavidromePlaybackSource(source) ? trackGain ?? null : null,
         live: chain?.balanceMeter.liveLoudness() ?? null,
         typicalDb: typicalGainDb(typicalGains()),
     };

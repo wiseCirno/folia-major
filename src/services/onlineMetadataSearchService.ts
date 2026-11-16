@@ -1,14 +1,12 @@
 import type { LocalSong, LyricProviderSource, SongResult } from '../types';
 import type { LocalSongMetadataSource } from '../types/localLibrary';
 import { getProviderSongMetadata } from './onlineMusic/songMetadata';
-import { getLyricSourceAccess } from '../utils/lyrics/lyricMatchSources';
 import { calculateMatchScoreDetails } from '../utils/lyrics/matchScore';
 import { buildLyricSearchQuery } from '../utils/lyrics/searchQuery';
 import {
     getMatchResultAlbumId,
     getMatchResultAlbumName,
     getMatchResultArtistEntities,
-    getMatchResultCoverUrl,
 } from '../utils/lyrics/matchResult';
 
 // src/services/onlineMetadataSearchService.ts
@@ -73,8 +71,8 @@ export const normalizeOnlineMetadataCandidate = (
         title: result.name || '',
         artists: getMatchResultArtistEntities(result),
         album: albumName ? { id: albumId, name: albumName } : undefined,
-        coverUrl: getMatchResultCoverUrl(result, source) || undefined,
-        durationMs: getProviderSongMetadata(result, source).durationMs,
+        coverUrl: getProviderSongMetadata(result).coverUrl?.replace('http:', 'https:') || undefined,
+        durationMs: getProviderSongMetadata(result).durationMs,
         score: details.score,
         titleMatched: details.titleMatched,
         durationMatched: details.durationMatched,
@@ -100,30 +98,6 @@ const throwIfAborted = (signal?: AbortSignal) => {
     throw error;
 };
 
-// Stops waiting immediately when a provider client cannot receive AbortSignal directly.
-const waitForProvider = async <T>(request: Promise<T>, signal?: AbortSignal): Promise<T> => {
-    if (!signal) return await request;
-    throwIfAborted(signal);
-    return await new Promise<T>((resolve, reject) => {
-        const abort = () => {
-            const error = new Error('Metadata matching was cancelled');
-            error.name = 'AbortError';
-            reject(error);
-        };
-        signal.addEventListener('abort', abort, { once: true });
-        request.then(
-            value => {
-                signal.removeEventListener('abort', abort);
-                resolve(value);
-            },
-            error => {
-                signal.removeEventListener('abort', abort);
-                reject(error);
-            },
-        );
-    });
-};
-
 export async function searchOnlineMetadata(
     source: OnlineMetadataSource,
     query: string,
@@ -133,13 +107,10 @@ export async function searchOnlineMetadata(
     const safeQuery = query.trim();
     if (!safeQuery) return [];
     throwIfAborted(options.signal);
-    const limit = options.limit ?? 10;
-    const results = await waitForProvider(getLyricSourceAccess(source).search(safeQuery, limit, target), options.signal);
-    throwIfAborted(options.signal);
-    return results
-        .map(result => normalizeOnlineMetadataCandidate(source, result, target))
-        .sort((left, right) => right.score - left.score)
-        .slice(0, limit);
+    // Those platforms are no longer registered. Older records still name them; a new search does not.
+    void source;
+    void target;
+    return [];
 }
 
 // Preserves the established NetEase-to-QQ fallback and appends KuGou as the final provider-backed source.
@@ -147,23 +118,7 @@ export async function findAutomaticOnlineMetadataCandidate(
     song: LocalSong,
     signal?: AbortSignal,
 ): Promise<OnlineMetadataCandidate | null> {
-    const target = buildLocalSongMetadataSearchTarget(song);
-    const query = buildLocalSongMetadataSearchQuery(song);
-    let neteaseCandidates: OnlineMetadataCandidate[] = [];
-    try {
-        neteaseCandidates = await searchOnlineMetadata('netease', query, target, { limit: 10, signal });
-    } catch (error) {
-        if ((error as Error).name === 'AbortError') throw error;
-        console.warn('[LocalMusic] NetEase metadata search failed, falling back to QQ:', error);
-    }
-    if (neteaseCandidates[0]?.titleMatched) return neteaseCandidates[0];
-    try {
-        const qqCandidates = await searchOnlineMetadata('qq', query, target, { limit: 10, signal });
-        if (qqCandidates[0]?.titleMatched) return qqCandidates[0];
-    } catch (error) {
-        if ((error as Error).name === 'AbortError') throw error;
-        console.warn('[LocalMusic] QQ metadata search failed, falling back to KuGou:', error);
-    }
-    const kugouCandidates = await searchOnlineMetadata('kugou', query, target, { limit: 10, signal });
-    return kugouCandidates[0]?.titleMatched ? kugouCandidates[0] : null;
+    void song;
+    void signal;
+    return null;
 }

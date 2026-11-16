@@ -1,6 +1,6 @@
 import type { SongResult, UnifiedSong } from '../../../../types';
 import type { OnlineProviderId } from '../../../../types/onlineMusic';
-import { getPlaybackSongKey, getPlaybackSourceRef, normalizePlaybackSongSource } from '../../../../utils/appPlaybackGuards';
+import { getPlaybackSongKey, getPlaybackSourceRef, isNavidromePlaybackSource, normalizePlaybackSongSource } from '../../../../utils/appPlaybackGuards';
 
 // src/components/app/home/explore/recentPlays.ts
 // Folia's own record of the songs played here: each song once, with when it was last played and
@@ -282,10 +282,12 @@ const setRightTo = new Map<string, SongResult>();
 const note = (song: SongResult, accountId: string, listening?: { lengthMs: number; wentStraightOn: boolean }): void => {
     const source = getPlaybackSourceRef(song);
     if (source.kind === 'stage') return;
+    // Navidrome 的播放记录仍放在原来的 `#navidrome:` 下面，不跟在线平台的键混在一起。
     const scope = keyOfScope(
-        source.kind === 'online' ? { kind: 'online', providerId: source.providerId, accountId }
-            : source.kind === 'local' ? { kind: 'local' }
-                : { kind: 'navidrome', accountId },
+        isNavidromePlaybackSource(source) ? { kind: 'navidrome', accountId }
+            : source.kind === 'online' ? { kind: 'online', providerId: source.providerId, accountId }
+                : source.kind === 'local' ? { kind: 'local' }
+                    : { kind: 'navidrome', accountId },
     );
     const shown = setRightTo.get(getPlaybackSongKey(song)) ?? song;
     const songKey = getPlaybackSongKey(shown);

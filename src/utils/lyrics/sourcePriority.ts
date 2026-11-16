@@ -3,7 +3,7 @@ import { LYRIC_SOURCE_IDS, isLyricProviderSource } from './lyricSources';
 
 // src/utils/lyrics/sourcePriority.ts
 
-export const DEFAULT_PREFERRED_LYRIC_SOURCE: LyricProviderSource = 'qq';
+export const DEFAULT_PREFERRED_LYRIC_SOURCE: LyricProviderSource = 'amll';
 
 // Places the user preference first while retaining every fallback source exactly once.
 export const buildLyricSourceOrder = (
@@ -20,7 +20,6 @@ export const migratePreferredLyricSource = (
     if (versionedValue !== null && versionedValue !== undefined) {
         return isLyricProviderSource(versionedValue) ? versionedValue : DEFAULT_PREFERRED_LYRIC_SOURCE;
     }
-    // A fixed list, not the table: only these three names are carried over from the older key.
-    if (legacyValue === 'amll' || legacyValue === 'qq' || legacyValue === 'kugou') return legacyValue;
+    if (legacyValue === 'amll') return legacyValue;
     return DEFAULT_PREFERRED_LYRIC_SOURCE;
 };

@@ -97,11 +97,7 @@ windowrule {
 
 ### 后端 API
 
-本项目依赖 [NeteaseCloudMusicApiEnhanced](https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced) 提供音乐相关后端服务。
-
-如果使用前端版本的话，需要先自行部署该 API 服务。
-
-QQ 音乐是可选音源，由 npm 包 `@yakult-green-tea/qq-music-api` 提供，有两种部署形态。一是常驻 Node 进程（Docker 容器、裸 Node，或 Electron 主进程内嵌），功能最完整，支持手机 QQ 扫码、微信扫码和 QQ 音乐 App 扫码；后端 3.3.2 起 Folia 只显示一张 QQ 音乐 App 扫码的二维码，手机 QQ、微信、QQ 音乐 App 都能扫。二是 serverless：从 3.0.0 起该包提供 `./serverless` 导出，本仓库已内置 Cloudflare Workers 与 Vercel 两个平台的入口，把 `VITE_QQ_API_BASE` 填成 `/api/qq` 并配好 `QQ_SESSION_SECRET` 即可，不需要单独部署 API 实例。serverless 形态默认支持微信扫码，3.3.3 起也支持手机 QQ 扫码（走 QQ 互联的网页登录，不用长连接），且 `/getMusicPlay` 必须先登录；Cloudflare 可选地绑定 Durable Object（`QQ_QR_CHANNEL` → `QqQrChannel`），手机 QQ 扫码改走长连接，3.3.2 起还多一个 QQ 音乐 App 扫码。完整部署步骤与排错方法见 [QQ 音乐部署指南](qq-music-deployment.md)；Docker 镜像、卷和常驻服务细节见 [`deploy/docker/qq-api/README.md`](../deploy/docker/qq-api/README.md)。Electron 版在主进程内直接启动该包，不需要单独部署。Folia 锁定 3.3.6。这个版本的后端提供独立的私人 FM 接口、每日推荐历史、歌曲不喜欢、探索页首页 feed 和听歌排行。旧版本各项功能所需的最低版本见 [QQ 音乐部署指南](qq-music-deployment.md)。
+Web 部署只带前端网关、Folia Web API 和 Sync Server。在线音乐由浏览器直接连接用户自己的 Navidrome，不再附带网易云、酷狗或 QQ 的接口容器。桌面版主进程里仍保留这些平台的旧桥，删桌面端时一起去掉。
 
 ### AI 能力
 

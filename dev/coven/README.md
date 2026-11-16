@@ -53,7 +53,7 @@ harness 再按 `config.json` 的 `risk` 表往上调。
 `npm run coven:setup`：
 
 1. 先 `npm ci --ignore-scripts`。
-2. 如果失败，而且失败的是 `setupWorktree.mjs` 里登记的“可能被挡的包”（现在只有 `kugoumusicapi`，它从 GitHub 下载 tarball，部分云端环境返回 403），就在 worktree 旁边的临时目录里，用去掉这些包的 package.json 和 lock 再装一次，然后把 `node_modules` 挪进 worktree。worktree 里跟踪的文件一个都不动。
+2. 如果失败，而且失败的是 `setupWorktree.mjs` 里登记的“可能被挡的包”（现在这份清单是空的），就在 worktree 旁边的临时目录里，用去掉这些包的 package.json 和 lock 再装一次，然后把 `node_modules` 挪进 worktree。worktree 里跟踪的文件一个都不动。
 3. 再装 ESLint 隔离环境（`npm run lint:install`）：verify 每次都跑 ESLint。
 
 少装了哪些包，由 `inspect` 告诉 `coven verify` 写进结果，evaluator 据此不把相关的失败算成这次改动的问题。这一步是 2026-11-09 云端干跑（WoO 1）时 generator 自己想出来的，用户定把它固定下来，generator 不再各自想办法。

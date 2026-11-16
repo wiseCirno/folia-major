@@ -19,8 +19,7 @@ interface LyricSourceEntry {
     /**
      * True when the source is an online platform's own catalogue, under that platform's provider
      * id: a song of the platform has these lyrics as its own, and the match windows search the
-     * source by the words typed. False for AMLL DB, which keeps lyrics under NetEase and QQ song
-     * ids and is reached through those two.
+     * source by the words typed. False for AMLL DB, which is reached through its own API.
      */
     platform: boolean;
     /** Selected local-song metadata from this source may resume automatic matching and refresh legacy lyrics. */
@@ -40,19 +39,13 @@ interface LyricSourceEntry {
 // In the order the automatic pick asks them after the preferred one, which is also the order of
 // the tabs in the match windows and of the choices in settings.
 const ENTRIES = [
-    { id: 'netease', labelKey: 'lyricProvider.netease', platform: true, localMetadataIdentity: true },
     { id: 'amll', labelKey: 'lyricProvider.amll', platform: false },
-    { id: 'qq', labelKey: 'lyricProvider.qq', platform: true, localMetadataIdentity: true },
-    { id: 'kugou', labelKey: 'lyricProvider.kugou', platform: true, localMetadataIdentity: true },
-    { id: 'qishui', labelKey: 'lyricProvider.qishui', platform: true, localMetadataIdentity: true, needsConfiguredProvider: true },
-    { id: 'spotify', labelKey: 'lyricProvider.spotify', platform: true, needsAccount: true, linesOnly: true },
-    // Apple's timed lyrics are TTML: word-level where Apple supplies it, line-level otherwise, and
-    // the parsed lyric says which. The companion must be there to ask.
-    { id: 'appleMusic', labelKey: 'lyricProvider.appleMusic', platform: true, needsAccount: true, needsConfiguredProvider: true },
 ] as const satisfies readonly LyricSourceEntry[];
 
 export type LyricProviderSource = (typeof ENTRIES)[number]['id'];
 export type PlatformLyricSource = Extract<(typeof ENTRIES)[number], { platform: true }>['id'];
+/** A source id that can still be stored on a song from before those platforms were removed. */
+export type RememberedLyricSource = LyricProviderSource | 'netease' | 'qq' | 'kugou' | 'qishui' | 'spotify' | 'appleMusic';
 
 export interface LyricSource extends LyricSourceEntry {
     id: LyricProviderSource;

@@ -3,7 +3,6 @@ import type { SettingsOptionDef } from '../kit';
 import type { SettingsSectionId } from '../navigation/settingsNavModel';
 import * as ai from './AiServicePage';
 import * as appearance from './AppearancePage';
-import * as desktop from './DesktopPage';
 import * as developer from './DeveloperPage';
 import * as general from './GeneralPage';
 import * as graphics from './GraphicsPage';
@@ -11,10 +10,8 @@ import * as home from './HomePage';
 import * as integration from './IntegrationPage';
 import * as interaction from './InteractionPage';
 import * as lyrics from './LyricsPage';
-import * as mods from './ModsPage';
 import * as playback from './PlaybackPage';
 import * as player from './PlayerPage';
-import * as remote from './RemotePage';
 import * as storage from './StoragePage';
 
 // src/components/modal/settings/pages/index.ts
@@ -35,10 +32,7 @@ const PAGE_MODULES: Record<SettingsSectionId, PageModule> = {
     interaction,
     integration,
     storage,
-    desktop,
-    remote,
     graphics,
-    mods,
     developer,
 };
 

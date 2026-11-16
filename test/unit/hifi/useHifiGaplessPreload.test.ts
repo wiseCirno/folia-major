@@ -418,7 +418,7 @@ describe('useHifiGaplessPreload', () => {
         await playOnHifi(NA);
         expect(nowPlayingReports('na')).toBe(1);
         await advance(GAPLESS_PRELOAD_DELAY_MS);
-        expect(useHifiTrackStore.getState().next?.songKey).toBe('navidrome:nb');
+        expect(useHifiTrackStore.getState().next?.songKey).toBe('online:navidrome:nb');
 
         // The shim's play / playing at the switch came while the player still showed NA.
         await pushSwitch();
@@ -426,7 +426,7 @@ describe('useHifiGaplessPreload', () => {
 
         await landPlay(shouldAutoPlayRef, NB);
         expect(usePlaybackStore.getState().currentSong).toBe(NB);
-        expect(useHifiTrackStore.getState().current).toMatchObject({ songKey: 'navidrome:nb', promotedByGapless: false });
+        expect(useHifiTrackStore.getState().current).toMatchObject({ songKey: 'online:navidrome:nb', promotedByGapless: false });
         expect(nowPlayingReports('nb')).toBe(1);
         expect(nowPlayingReports('na')).toBe(1);
     });

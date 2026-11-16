@@ -1,4 +1,4 @@
-import { Boxes, Contrast, Database, Gauge, Keyboard, LayoutGrid, Link2, Monitor, MonitorPlay, PictureInPicture2, PlayCircle, SlidersHorizontal, Sparkles, Terminal, TextAlignStart, type LucideIcon } from 'lucide-react';
+import { Contrast, Database, Gauge, Keyboard, LayoutGrid, Link2, MonitorPlay, PlayCircle, SlidersHorizontal, Sparkles, Terminal, TextAlignStart, type LucideIcon } from 'lucide-react';
 // src/components/modal/settings/navigation/settingsNavModel.ts
 // Single source of truth for the settings categories: their order in the side list, their grouping,
 // icons and names. A category is cut by what the listener is looking at or doing, so each page holds
@@ -16,9 +16,6 @@ export type SettingsSectionId =
     | 'integration'
     | 'ai'
     | 'storage'
-    | 'desktop'
-    | 'remote'
-    | 'mods'
     | 'developer';
 
 export interface SettingsNavItem {
@@ -79,17 +76,12 @@ export const SETTINGS_NAV_GROUP_SPECS: GroupSpec[] = [
             // 网页版没有用户侧的密钥（部署自己配），所以只在桌面端出现。
             { id: 'ai', icon: Sparkles, labelKey: 'options.settingsPageAi', electronOnly: true },
             { id: 'storage', icon: Database, labelKey: 'options.settingsPageStorage' },
-            { id: 'desktop', icon: Monitor, labelKey: 'options.settingsPageDesktop', electronOnly: true },
-            // The Remote Control window is a desktop-app window; its settings key opens this page.
-            { id: 'remote', icon: PictureInPicture2, labelKey: 'options.settingsPageRemote', electronOnly: true },
         ],
     },
     {
         id: 'advanced',
         labelKey: 'options.settingsGroupAdvanced',
         sections: [
-            // The loader only exists in the desktop main process; on web there is nothing to switch on.
-            { id: 'mods', icon: Boxes, labelKey: 'options.settingsPageMods', electronOnly: true },
             { id: 'developer', icon: Terminal, labelKey: 'options.settingsPageDeveloper' },
         ],
     },

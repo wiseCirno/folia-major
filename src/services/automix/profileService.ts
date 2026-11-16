@@ -1,5 +1,5 @@
 import type { SongResult } from '../../types';
-import { getPlaybackSongKey, getPlaybackSourceRef } from '../../utils/appPlaybackGuards';
+import { getPlaybackSongKey, getPlaybackSourceRef, isNavidromePlaybackSource } from '../../utils/appPlaybackGuards';
 import { notifyAudioCached, onAudioCached, saveAudioBlob } from '../audioCache';
 import { getFromCache, saveToCache } from '../db';
 import { omni } from '../onlineMusic/omni';
@@ -336,9 +336,10 @@ const keepWithProvider = async (song: SongResult, audioUrl: string | null | unde
  */
 export const downloadRuleOf = (song: SongResult, audioUrl: string): 'free' | 'library' | 'online' => {
     if (audioUrl.startsWith('blob:') || audioUrl.startsWith('file:')) return 'free';
-    const kind = getPlaybackSourceRef(song).kind;
-    if (kind === 'online') return 'online';
-    return kind === 'navidrome' ? 'library' : 'free';
+    const source = getPlaybackSourceRef(song);
+    if (isNavidromePlaybackSource(source)) return 'library';
+    if (source.kind === 'online') return 'online';
+    return 'free';
 };
 
 const readBytes = async (

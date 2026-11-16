@@ -1,12 +1,10 @@
-import shared from '../../../electron/modSystem/foliumShared.json';
+import shared from './foliumShared.json';
 
 // src/mods/folium/shared.ts
 // The window side's reading of the one file that holds what both sides of the
 // mod system must agree on: the Folium version, the permission ids (each with
 // the member paths it guards) and the names of the experimental surfaces
-// (electron/modSystem/foliumShared.json, which the main process reads too; it
-// sits there because only that folder is in the packaged app for the main
-// process to read). Nothing here is written a second time: contract.ts, which
+// (src/mods/folium/foliumShared.json). Nothing here is written a second time: contract.ts, which
 // imports nothing, keeps its own FOLIUM_VERSION, and a unit test holds it to
 // this file (test/unit/mod-system/foliumShared.test.ts).
 

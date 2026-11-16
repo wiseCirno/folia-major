@@ -1,8 +1,7 @@
 import type { UnifiedSong } from '../../../src/types';
 import type { LoginSelfCheckResult, OnlineMusicProvider } from '../../../src/types/onlineMusic';
-import { useNeteaseApiStatusStore } from '../../../src/services/onlineMusic/netease/useNeteaseApiStatusStore';
 import { diagnosticLine } from '../../../src/services/onlineMusic/login/loginDiagnosticReport';
-import { ACCOUNT_CANCEL_COOLDOWN_MS, ACCOUNT_NETEASE, accountUser, qrKeyOf, type AccountProviderRule } from './accountFixtureRules';
+import { ACCOUNT_CANCEL_COOLDOWN_MS, accountUser, qrKeyOf, type AccountProviderRule } from './accountFixtureRules';
 import type { AccountCall, AccountQrState, AccountSelfCheckScript } from './probeApi';
 
 // dev/probes/accountBehavior/fakeAuthProviders.ts
@@ -144,10 +143,7 @@ export const createFakeAuthProvider = (rule: AccountProviderRule): OnlineMusicPr
                 qrSerial += 1;
                 const key = qrKeyOf(providerId, methodId, qrSerial);
                 recordAccountCall({ op: 'create', providerId, key, methodId: methodId ?? null });
-                // 网易本地后端没起来时，真实的要码请求必然失败。
-                const backendDown = providerId === ACCOUNT_NETEASE
-                    && useNeteaseApiStatusStore.getState().status?.status === 'error';
-                if (backendDown || takeFailure(createFailures, providerId)) {
+                if (takeFailure(createFailures, providerId)) {
                     throw new Error(`probe: cannot create QR for ${providerId}`);
                 }
                 return key;

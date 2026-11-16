@@ -79,12 +79,9 @@ describe('settingsLastSection', () => {
         });
 
         it('returns null for a section the current platform hides', () => {
-            const storage = createStorage({ [SETTINGS_LAST_SECTION_STORAGE_KEY]: 'desktop' });
+            const storage = createStorage({ [SETTINGS_LAST_SECTION_STORAGE_KEY]: 'ai' });
             expect(readLastSettingsSection(WEB, storage)).toBeNull();
-            expect(readLastSettingsSection(DESKTOP, storage)).toBe('desktop');
-
-            storage.data[SETTINGS_LAST_SECTION_STORAGE_KEY] = 'mods';
-            expect(readLastSettingsSection(WEB, storage)).toBeNull();
+            expect(readLastSettingsSection(DESKTOP, storage)).toBe('ai');
         });
 
         it('returns null instead of throwing when storage is unavailable', () => {
@@ -102,7 +99,7 @@ describe('settingsLastSection', () => {
 
         it('does not store a section the platform hides', () => {
             const storage = createStorage();
-            writeLastSettingsSection('desktop', WEB, storage);
+            writeLastSettingsSection('ai', WEB, storage);
             expect(storage.data).toEqual({});
         });
 
@@ -115,7 +112,7 @@ describe('settingsLastSection', () => {
     describe('sectionForSettingsSubview', () => {
         it('maps section subviews to themselves', () => {
             expect(sectionForSettingsSubview('player')).toBe('player');
-            expect(sectionForSettingsSubview('mods')).toBe('mods');
+            expect(sectionForSettingsSubview('storage')).toBe('storage');
         });
 
         it('maps the lyrics secondary panels back to lyrics', () => {
@@ -149,7 +146,7 @@ describe('settingsLastSection', () => {
             const request = { initialSubview: null, hasInitialAnchor: false, ...WEB };
             expect(resolveInitialSettingsSection(request, createStorage())).toBe(DEFAULT_SETTINGS_SECTION);
             expect(resolveInitialSettingsSection(request, createStorage({ [SETTINGS_LAST_SECTION_STORAGE_KEY]: 'gone' }))).toBe(DEFAULT_SETTINGS_SECTION);
-            expect(resolveInitialSettingsSection(request, createStorage({ [SETTINGS_LAST_SECTION_STORAGE_KEY]: 'desktop' }))).toBe(DEFAULT_SETTINGS_SECTION);
+            expect(resolveInitialSettingsSection(request, createStorage({ [SETTINGS_LAST_SECTION_STORAGE_KEY]: 'ai' }))).toBe(DEFAULT_SETTINGS_SECTION);
             expect(resolveInitialSettingsSection(request, throwingStorage)).toBe(DEFAULT_SETTINGS_SECTION);
             expect(resolveInitialSettingsSection(request, null)).toBe(DEFAULT_SETTINGS_SECTION);
         });

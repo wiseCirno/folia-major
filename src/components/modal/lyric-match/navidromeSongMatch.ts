@@ -38,10 +38,8 @@ export const saveNavidromeLyricMatch = async (
         matchedLyricsProviderPlatform: processed.matchedLyricsProviderPlatform,
     };
 
-    if (source !== 'netease') {
-        matchData.useOnlineCover = false;
-        matchData.useOnlineMetadata = false;
-    }
+    matchData.useOnlineCover = false;
+    matchData.useOnlineMetadata = false;
 
     await saveToCache(getNavidromeMatchCacheKey(song), matchData);
     return true;

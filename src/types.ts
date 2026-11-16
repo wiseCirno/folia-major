@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { LineRenderHints } from './utils/lyrics/renderHints';
-import type { LyricProviderSource } from './utils/lyrics/lyricSources';
+import type { LyricProviderSource, RememberedLyricSource } from './utils/lyrics/lyricSources';
 import type { MediaId, OnlineProviderId, PlaybackSourceRef, ProviderCatalogRef } from './types/onlineMusic';
 
 export interface LyricRuby {
@@ -1419,7 +1419,7 @@ export interface NoCopyrightRecommendation {
 }
 
 // The names of the lyric sources, read off the table in utils/lyrics/lyricSources.ts.
-export type { LyricProviderSource };
+export type { LyricProviderSource, RememberedLyricSource };
 export type AmllDbPlatform = 'ncm' | 'qq';
 
 export interface ReplayGainInfo {
@@ -1452,7 +1452,7 @@ export interface SongResult {
   resourceState?: boolean;
   privilege?: SongPrivilege;
   onlineLyricsState?: OnlineLyricsState;
-  matchedLyricsSource?: LyricProviderSource;
+  matchedLyricsSource?: RememberedLyricSource;
   matchedLyricsProviderPlatform?: AmllDbPlatform;
   replayGain?: ReplayGainInfo;
   qqMid?: string;
@@ -1468,7 +1468,7 @@ export interface OnlineLyricsState {
   onlineOverrideLyrics?: LyricData | null;
   matchedSongId?: MediaId;
   matchedIsPureMusic?: boolean;
-  matchedLyricsSource?: LyricProviderSource;
+  matchedLyricsSource?: RememberedLyricSource;
   matchedLyricsProviderPlatform?: AmllDbPlatform;
 }
 
@@ -1528,7 +1528,7 @@ export interface LocalSong {
   markedPureMusic?: boolean; // User marked the song as instrumental: automatic lyric matching never runs for it
   folderName?: string; // Name of the folder if imported via folder import
   noAutoMatch?: boolean; // If true, do not attempt to auto-match metadata
-  matchedLyricsSource?: LyricProviderSource;
+  matchedLyricsSource?: RememberedLyricSource;
   matchedLyricsProviderPlatform?: AmllDbPlatform;
 
   // User preferences for online data override (set via LocalSongLyricMatch)

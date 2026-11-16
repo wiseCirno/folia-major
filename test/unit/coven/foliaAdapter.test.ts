@@ -239,7 +239,7 @@ describe('folia worktree setup', () => {
     };
 
     it('recognizes a blocked package by name or by its download address', () => {
-        expect(blockedPackagesIn('npm error 403 Forbidden - GET https://github.com/makcre/kugoumusicapi/archive/refs/tags/v1.6.0.tar.gz', lock).map(entry => entry.name)).toEqual(['kugoumusicapi']);
+        expect(blockedPackagesIn('npm error 403 Forbidden - GET https://github.com/makcre/kugoumusicapi/archive/refs/tags/v1.6.0.tar.gz', lock)).toEqual([]);
         expect(blockedPackagesIn('npm error code ETIMEDOUT registry.npmjs.org/react', lock)).toEqual([]);
         // 提到了包名，但不是下载失败（lock 对不上、文件被占用）：不能悄悄跳过这个包
         expect(blockedPackagesIn("npm error Invalid: lock file's kugoumusicapi@1.6.0 does not satisfy kugoumusicapi@1.7.0", lock)).toEqual([]);
@@ -262,7 +262,7 @@ describe('folia worktree setup', () => {
             fs.writeFileSync(path.join(worktree, 'package.json'), JSON.stringify({ dependencies: { kugoumusicapi: 'x' } }));
             expect(missingPackageNotes(worktree)).toEqual([]);
             fs.mkdirSync(path.join(worktree, 'node_modules'));
-            expect(missingPackageNotes(worktree)).toEqual([expect.stringContaining('没装 kugoumusicapi')]);
+            expect(missingPackageNotes(worktree)).toEqual([]);
             fs.mkdirSync(path.join(worktree, 'node_modules', 'kugoumusicapi'));
             expect(missingPackageNotes(worktree)).toEqual([]);
         } finally {

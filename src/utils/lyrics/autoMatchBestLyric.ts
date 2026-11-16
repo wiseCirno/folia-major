@@ -1,8 +1,6 @@
 import { LyricData, LyricProviderSource, SongResult } from '../../types';
 import { getOnlineMusicProvider } from '../../services/onlineMusic/providerRegistry';
 import type { OnlineProviderId, ProviderLyricSearchAlias, ProviderLyricsResult } from '../../types/onlineMusic';
-import { fetchAmllDbLyrics, getAmllDbMusicIds } from './providers/amllDbProvider';
-import { applyChorusRangesByTime } from './chorusEffects';
 import type { ChorusRange } from './chorusEffects';
 import { normalizeLyricMatchDurationMs } from './duration';
 import { calculateMatchScoreDetails } from './matchScore';
@@ -11,8 +9,7 @@ import { buildLyricSourceOrder } from './sourcePriority';
 import { resolveProviderLyricsChorus } from './chorusResolver';
 import { hasRenderableLyrics } from './validity';
 import { getLyricSourceAccess, isLyricMatchSourceOffered } from './lyricMatchSources';
-import { getLyricSource } from './lyricSources';
-import type { PlatformLyricSource } from './lyricSources';
+import { getLyricSource, isLyricProviderSource } from './lyricSources';
 import type { LocalSongMetadataLyricCandidate } from './localSongMatchContext';
 import { asksBeforeOwnWordTiming, keepsOwnWordTiming } from './ownWordTiming';
 
@@ -25,17 +22,13 @@ const AUTO_MATCH_SEARCH_LIMIT = 10;
 const AUTO_MATCH_MIN_SCORE = 75;
 const SHOULD_LOG_MATCH_DETAILS = import.meta.env.DEV;
 
-const hasChorusMarkers = (lyrics: LyricData | null): boolean => (
-    Boolean(lyrics?.lines.some(line => line.isChorus))
-);
-
-const getProviderChorusRanges = (providerId: OnlineProviderId, song: SongResult) => (
-    getOnlineMusicProvider(providerId)?.lyrics?.getChorusRanges?.(song.id) ?? Promise.resolve([])
+const lyricSourceId = (providerId: OnlineProviderId | undefined): LyricProviderSource | undefined => (
+    isLyricProviderSource(providerId) ? providerId : undefined
 );
 
 export interface AutoMatchProviderCandidate {
     /** The lyric source the song's own platform is (getPlatformLyricSource). */
-    providerId: PlatformLyricSource;
+    providerId: OnlineProviderId;
     song: SongResult;
     lyricsResult: ProviderLyricsResult;
 }
@@ -283,58 +276,18 @@ async function matchUnderArtist(
     ): Promise<LyricData> => {
         // A song whose platform has lines only (Spotify) has no chorus data to lend: the winner's
         // own text marks its chorus lines.
-        const lender = providerCandidate && !getLyricSource(providerCandidate.providerId).linesOnly
+        const ownSource = lyricSourceId(providerCandidate?.providerId);
+        const lender = providerCandidate && ownSource && !getLyricSource(ownSource).linesOnly
             ? providerCandidate
             : undefined;
         const providerResult = lender
             ? { ...lender.lyricsResult, lyrics, isPureMusic: false }
             : { ...(sourceResult ?? { isPureMusic: false }), lyrics, isPureMusic: false };
         const resolved = await resolveProviderLyricsChorus(providerResult, {
-            providerId: lender?.providerId ?? source,
+            providerId: ownSource ?? source,
             songId: lender?.song.id ?? sourceSong.id,
         });
         return resolved.result.lyrics ?? lyrics;
-    };
-
-    const tryAmllDbCandidate = async (
-        platform: 'ncm' | 'qq',
-        song: any,
-    ): Promise<AutoMatchBestLyricMatch | null> => {
-        console.log(`[autoMatchBestLyric] Probing AMLLDB ${platform}/${song.id} for "${song.name || title}"`);
-        // QQ 要依次试 mid 和数字 ID，每次请求各有超时，外层按 ID 个数放宽，否则第一次慢了第二个 ID 就轮不到
-        const musicIds = getAmllDbMusicIds(platform, song);
-        const lyrics = await withTimeout(
-            fetchAmllDbLyrics(platform, musicIds),
-            PROVIDER_LYRIC_TIMEOUT_MS * Math.max(1, musicIds.length),
-            `AMLLDB lyric fetch for ${platform}/${song.id}`,
-            null
-        );
-        if (!hasRenderableLyrics(lyrics)) {
-            console.log(`[autoMatchBestLyric] AMLLDB ${platform}/${song.id} returned no TTML lyrics. Continuing with the next source.`);
-            return null;
-        }
-        const chorusRanges = !hasChorusMarkers(lyrics)
-            ? activeProviderChorusRanges.length > 0
-                ? activeProviderChorusRanges
-                : platform === 'ncm'
-                    ? (sharedChorusRanges.length > 0
-                        ? sharedChorusRanges
-                        : await getProviderChorusRanges('netease', song))
-                    : []
-            : [];
-        const decoratedLyrics = chorusRanges.length > 0
-            ? applyChorusRangesByTime(lyrics, chorusRanges)
-            : lyrics;
-
-        console.log(`[autoMatchBestLyric] Found AMLLDB ${lyrics.isWordByWord ? 'word-by-word' : 'line-by-line'} lyric match from ${platform}!`);
-        return {
-            lyrics: decoratedLyrics,
-            source: 'amll',
-            id: song.id,
-            song,
-            matchedLyricsProviderPlatform: platform,
-            ...(platform === 'qq' ? { qqMid: song.qqMid } : {}),
-        };
     };
 
     // Asks one platform source for its candidate's lyrics. Answers what ends the pick (a
@@ -385,47 +338,9 @@ async function matchUnderArtist(
         return null;
     };
 
-    // AMLL DB uses NetEase and QQ song IDs: try the metadata-selected candidate first.
-    // The NetEase candidate follows when available.
-    const tryAmllDb = async (): Promise<AutoMatchBestLyricResult> => {
-        if (options.metadataCandidate?.source === 'qq') {
-            const qqCandidate = await getBestCandidate('qq');
-            if (qqCandidate && isSelectedMetadataCandidate('qq', qqCandidate, options.metadataCandidate)) {
-                const result = await tryAmllDbCandidate('qq', qqCandidate);
-                if (result) {
-                    if (result.lyrics.isWordByWord) {
-                        return result;
-                    }
-                    lineByLineFallback ??= result;
-                }
-            }
-        }
-
-        const neteaseCandidate = await getBestCandidate('netease');
-        if (!neteaseCandidate) {
-            console.log('[autoMatchBestLyric] Skipping AMLLDB auto probe because no reliable NetEase candidate id was found.');
-            return null;
-        }
-
-        const result = await tryAmllDbCandidate('ncm', neteaseCandidate);
-        if (result) {
-            if (result.lyrics.isWordByWord) {
-                return result;
-            }
-            lineByLineFallback ??= result;
-        }
-        console.log('[autoMatchBestLyric] AMLLDB auto probe finished after NCM miss; QQ AMLLDB probing is reserved for manual matching.');
-        return null;
-    };
-
-    // AMLL DB is the one source that is not a platform: it has no songs of its own to search,
-    // and a step of its own here. Another source that is not a platform has none yet and is
-    // passed over.
     const trySource = async (source: LyricProviderSource): Promise<AutoMatchBestLyricResult> => {
         try {
-            return getLyricSource(source).platform
-                ? await tryPlatformSource(source)
-                : source === 'amll' ? await tryAmllDb() : null;
+            return await tryPlatformSource(source);
         } catch (error) {
             console.error(`[autoMatchBestLyric] ${source} search/fetch failed:`, error);
             return null;
@@ -438,8 +353,9 @@ async function matchUnderArtist(
     // say (issue #1127). The rule lives here so every caller - playback, prefetch, a match
     // window - obeys it without repeating it.
     const ownLyrics = providerCandidate?.lyricsResult.lyrics;
-    if (providerCandidate && ownLyrics && keepsOwnWordTiming({
-        ownSource: providerCandidate.providerId,
+    const ownSource = lyricSourceId(providerCandidate?.providerId);
+    if (providerCandidate && ownSource && ownLyrics && keepsOwnWordTiming({
+        ownSource,
         prefersOwn: getOnlineMusicProvider(providerCandidate.providerId)?.lyrics?.prefersOwnWordByWord === true,
         lyrics: ownLyrics,
         keepOwn: options.keepOwnWordTiming !== false,
@@ -456,7 +372,7 @@ async function matchUnderArtist(
         console.log(`[autoMatchBestLyric] ${providerCandidate.providerId} keeps its own word timing`);
         return {
             lyrics: ownLyrics,
-            source: providerCandidate.providerId,
+            source: ownSource,
             id: providerCandidate.song.id,
             song: providerCandidate.song,
             ...(providerCandidate.song.qqMid ? { qqMid: providerCandidate.song.qqMid } : {}),

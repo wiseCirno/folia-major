@@ -8,10 +8,8 @@ import path from 'node:path';
 // 少装了什么由 inspect 告诉 verify，写进结果。2026-11-09 云端干跑（WoO 1）时 KuGouMusicApi 的 tarball 返回 403，
 // generator 自己想了这个办法；用户定把它写成固定的准备步骤，generator 不再各自想办法。
 
-/** 可能在某些环境装不上、少了它也能做大部分验证的包。 */
-export const BLOCKABLE_PACKAGES = [
-    { name: 'kugoumusicapi', why: '酷狗的 API 包，从 GitHub 下载 tarball，部分云端环境会被挡（403）', affects: '涉及酷狗的单测和真跑' },
-];
+/** 可能在某些环境装不上、少了它也能做大部分验证的包。酷狗包已经不在依赖里。 */
+export const BLOCKABLE_PACKAGES = [];
 
 /**
  * 跑 npm。Windows 上 npm 是 .cmd，要经过 shell；参数都是这里写死的常量，拼成一条命令字符串交给 shell

@@ -80,7 +80,7 @@ const LocalSongLyricMatch: React.FC<LocalSongLyricMatchProps> = ({ song, onClose
     const lyricsSourceLabel = useMemo(() => {
         if (lyricsSource === 'online') {
             if (!selectedResult && song.markedPureMusic) return t('localMusic.statusPureMusic');
-            const src = selectedResult ? source : (song.matchedLyricsSource || 'netease');
+            const src = selectedResult ? source : (song.matchedLyricsSource || 'amll');
             const platform = selectedResult?.amllDbPlatform ?? song.matchedLyricsProviderPlatform;
             return getLyricMatchSourceLabel(src, platform);
         }

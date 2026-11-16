@@ -85,7 +85,7 @@ const LyricsPage: React.FC = () => {
     return (
         <>
             <Group def={SOURCE}>
-                <Row option={O.autoBest} note={t(sources.includes('spotify') ? 'options.autoUseBestLyricDescSpotify' : 'options.autoUseBestLyricDesc')}>
+                <Row option={O.autoBest} note={t('options.autoUseBestLyricDesc')}>
                     <Toggle checked={lyric.autoBest} onChange={lyric.setAutoBest} />
                 </Row>
                 <Row option={O.matchPriority} note={t('settings.lyricMatchPriorityDesc')}>

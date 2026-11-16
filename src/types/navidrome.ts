@@ -1,4 +1,4 @@
-import { AmllDbPlatform, LyricData, LyricProviderSource, ReplayGainInfo, SongResult } from '../types';
+import { AmllDbPlatform, LyricData, RememberedLyricSource, ReplayGainInfo, SongResult } from '../types';
 import type { MediaId } from './onlineMusic';
 
 // Navidrome/Subsonic API Configuration
@@ -354,7 +354,7 @@ export interface NavidromeSong extends SongResult {
     useOnlineCover?: boolean;
     useOnlineMetadata?: boolean;
     noAutoMatch?: boolean;
-    matchedLyricsSource?: LyricProviderSource;
+    matchedLyricsSource?: RememberedLyricSource;
     matchedLyricsProviderPlatform?: AmllDbPlatform;
     cachedStructuredLyrics?: StructuredLyric | StructuredLyric[] | StructuredLyricLine[];
     cachedPlainLyrics?: string;
@@ -378,7 +378,7 @@ export interface NavidromeMatchData {
     useOnlineMetadata?: boolean;
     noAutoMatch?: boolean;
     hasManualLyricSelection?: boolean;
-    matchedLyricsSource?: LyricProviderSource;
+    matchedLyricsSource?: RememberedLyricSource;
     matchedLyricsProviderPlatform?: AmllDbPlatform;
 }
 

@@ -1,4 +1,4 @@
-import { AmllDbPlatform, LocalSong, LyricProviderSource, SongResult, UnifiedSong } from '../types';
+import { AmllDbPlatform, LocalSong, RememberedLyricSource, SongResult, UnifiedSong } from '../types';
 import { NavidromeSong } from '../types/navidrome';
 import type { LocalLibraryAssignment, LocalLibraryEntity } from '../types/localLibrary';
 import { buildLocalLibraryIndex, followEntityRedirect, type LocalLibraryIndex } from '../utils/localLibraryIndex';
@@ -140,7 +140,6 @@ export function buildUnifiedLocalSong({
     localSong,
     matchedSong,
     coverUrl,
-    preferOnlineMetadata,
 }: {
     localSong: LocalSong;
     matchedSong: SongResult | null;
@@ -234,7 +233,7 @@ export function buildUnifiedNavidromeSong(
         useOnlineMetadata?: boolean;
         matchedArtists?: string;
         matchedAlbumName?: string;
-        matchedLyricsSource?: LyricProviderSource;
+        matchedLyricsSource?: RememberedLyricSource;
         matchedLyricsProviderPlatform?: AmllDbPlatform;
     }
 ): SongResult {
@@ -255,7 +254,7 @@ export function buildUnifiedNavidromeSong(
         isPureMusic: navidromeSong.lyricsSource === 'online' ? navidromeSong.matchedIsPureMusic : false,
         isNavidrome: true,
         navidromeData: navidromeSong,
-        sourceRef: { kind: 'navidrome', mediaId: navidromeSong.navidromeData.id },
+        sourceRef: { kind: 'online', providerId: 'navidrome', mediaId: navidromeSong.navidromeData.id },
         matchedLyricsSource: options?.matchedLyricsSource,
         matchedLyricsProviderPlatform: options?.matchedLyricsProviderPlatform
     } as SongResult;

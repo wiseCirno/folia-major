@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { PLATFORM_NAME_PLACES, PLACE_KINDS, type PlaceKind } from './platformNamePlaces.ts';
 
 // test/unit/onlineMusic/platformNameCount.ts
@@ -62,11 +62,14 @@ export interface FileCount {
 
 export type PlatformCounts = Partial<Record<CountedPlatform, FileCount>>;
 
-const listFiles = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-    const path = `${dir}/${entry.name}`;
-    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : listFiles(path);
-    return SOURCE_FILE.test(entry.name) && !SKIPPED_FILE.test(path) ? [path] : [];
-});
+const listFiles = (dir: string): string[] => {
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+        const path = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : listFiles(path);
+        return SOURCE_FILE.test(entry.name) && !SKIPPED_FILE.test(path) ? [path] : [];
+    });
+};
 
 // A folder named for a platform is that platform's own: src/services/onlineMusic/qq/, electron/qq/.
 const isOwnFile = (file: string, platform: CountedPlatform): boolean => file.split('/').slice(0, -1).includes(platform);

@@ -65,7 +65,7 @@ describe('playback song identity', () => {
 
     it('uses stable source ids instead of generated numeric ids', () => {
         expect(getPlaybackSongKey(localSong('local-stable', -123))).toBe('local:local-stable');
-        expect(getPlaybackSongKey(navidromeSong('navi-stable', -123))).toBe('navidrome:navi-stable');
+        expect(getPlaybackSongKey(navidromeSong('navi-stable', -123))).toBe('online:navidrome:navi-stable');
         expect(getPlaybackSongKey(kugouSong('ABCDEF'))).toBe('online:kugou:ABCDEF');
     });
 
@@ -79,7 +79,7 @@ describe('playback song identity', () => {
         expect(nextQueue.map(getPlaybackSongKey)).toEqual([
             'online:netease:1',
             'local:local-1',
-            'navidrome:navi-1',
+            'online:navidrome:navi-1',
         ]);
         expect(nextQueue[1].name).toBe('After');
         expect(hasMixedPlaybackSources(nextQueue)).toBe(true);

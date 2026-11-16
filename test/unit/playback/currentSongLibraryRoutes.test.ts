@@ -455,13 +455,13 @@ describe('playing a Navidrome song and the current song', () => {
             'wait navidrome song n1 | song=L1 key=local:l1',
             'wait navidrome lyrics n1 | song=L1 key=local:l1',
             // The key has moved; the store still shows the song before.
-            'lyrics=set | song=L1 key=navidrome:n1',
-            'song=N1 key=navidrome:n1',
-            'cover=https://navi.test/cover/n1 key=navidrome:n1',
-            'audio=https://navi.test/stream/n1 key=navidrome:n1',
-            'queue=[N1] key=navidrome:n1',
+            'lyrics=set | song=L1 key=online:navidrome:n1',
+            'song=N1 key=online:navidrome:n1',
+            'cover=https://navi.test/cover/n1 key=online:navidrome:n1',
+            'audio=https://navi.test/stream/n1 key=online:navidrome:n1',
+            'queue=[N1] key=online:navidrome:n1',
         ]);
-        expect(refs.currentSongRef.current).toBe('navidrome:n1');
+        expect(refs.currentSongRef.current).toBe('online:navidrome:n1');
     });
 });
 
@@ -658,7 +658,7 @@ describe('what follows a save that takes a moment', () => {
     it('a lyric match saved for a Navidrome song replays that song while it still plays, and nothing after another started', async () => {
         const playing = await afterPlaying([library => library.onPlayNavidromeSong(navidromeSong)]);
         await playing.library.handleNaviLyricMatchComplete(playing.savedFor);
-        expect(playing.watch.take()[0]).toBe('wait navidrome song n1 | song=N1 key=navidrome:n1');
+        expect(playing.watch.take()[0]).toBe('wait navidrome song n1 | song=N1 key=online:navidrome:n1');
         expect(status()).toMatchObject({ type: 'success', text: 'status.matchSuccessful' });
 
         const movedOn = await afterPlaying([
@@ -872,11 +872,11 @@ describe('the audio address of a local file and of a Navidrome song', () => {
         expect(watch.take()).toEqual([
             'wait navidrome song n1 | song=L1 key=local:l1',
             'wait navidrome lyrics n1 | song=L1 key=local:l1',
-            'lyrics=set | song=L1 key=navidrome:n1',
-            'song=N1 key=navidrome:n1',
-            'cover=https://navi.test/cover/n1 key=navidrome:n1',
-            'audio=https://navi.test/stream/n1 key=navidrome:n1 blobRef=blob:l1 fetchedAt=777',
-            'queue=[N1] key=navidrome:n1',
+            'lyrics=set | song=L1 key=online:navidrome:n1',
+            'song=N1 key=online:navidrome:n1',
+            'cover=https://navi.test/cover/n1 key=online:navidrome:n1',
+            'audio=https://navi.test/stream/n1 key=online:navidrome:n1 blobRef=blob:l1 fetchedAt=777',
+            'queue=[N1] key=online:navidrome:n1',
         ]);
         expect(song.navidromeData.replayGain).toEqual({ trackGain: -4 });
         expect(usePlaybackStore.getState().currentSong).toMatchObject({
@@ -889,12 +889,12 @@ describe('the audio address of a local file and of a Navidrome song', () => {
 
     it('a Navidrome song that has a copy the browser can play: the copy is the address', async () => {
         const { watch, library } = await afterLocalOne();
-        registerPlaybackRepresentation(representation('navidrome:n1', 'n1:::1000:https://navi.test/stream/n1'));
+        registerPlaybackRepresentation(representation('online:navidrome:n1', 'n1:::1000:https://navi.test/stream/n1'));
 
         await library.onPlayNavidromeSong(aNavidromeSong());
 
         expect(watch.take().filter(line => line.startsWith('audio'))).toEqual([
-            'audio=blob:transcoded-navidrome:n1 key=navidrome:n1 blobRef=blob:l1 fetchedAt=777',
+            'audio=blob:transcoded-online:navidrome:n1 key=online:navidrome:n1 blobRef=blob:l1 fetchedAt=777',
         ]);
     });
 
@@ -1033,20 +1033,20 @@ describe('a local file and a Navidrome song on the HiFi route', () => {
         const format = { contentType: 'audio/flac', bitDepth: 24, samplingRate: 96000, channelCount: 2 };
         env.serverSong = { replayGain: { trackGain: -4 }, ...format };
         // A copy made for the web route is not looked for.
-        registerPlaybackRepresentation(representation('navidrome:n1', 'n1:::1000:https://navi.test/stream/n1'));
+        registerPlaybackRepresentation(representation('online:navidrome:n1', 'n1:::1000:https://navi.test/stream/n1'));
 
         await library.onPlayNavidromeSong(song);
 
         expect(watch.take()).toEqual([
             'wait navidrome song n1 | song=L1 key=local:l1',
             'wait navidrome lyrics n1 | song=L1 key=local:l1',
-            'lyrics=set | song=L1 key=navidrome:n1',
-            'song=N1 key=navidrome:n1',
-            'cover=https://navi.test/cover/n1 key=navidrome:n1',
+            'lyrics=set | song=L1 key=online:navidrome:n1',
+            'song=N1 key=online:navidrome:n1',
+            'cover=https://navi.test/cover/n1 key=online:navidrome:n1',
             // The web route leaves the local song's blob URL in place; this route makes none, so it goes now.
             'retire blob:l1',
-            'hifi N1 navidrome from 0 | song=N1 key=navidrome:n1',
-            'queue=[N1] key=navidrome:n1',
+            'hifi N1 navidrome from 0 | song=N1 key=online:navidrome:n1',
+            'queue=[N1] key=online:navidrome:n1',
         ]);
         expect(env.routesAsked.at(-1)).toBe('navidrome navidrome:n1');
         const [start] = env.hifiStarts;

@@ -329,7 +329,7 @@ describe('a Navidrome song played from the queue, landing after the queue was re
         matchData.resolve();
         await play;
 
-        expect(keys(store().playQueue)).toEqual(['navidrome:n1', 'navidrome:n2']);
+        expect(keys(store().playQueue)).toEqual(['online:navidrome:n1', 'online:navidrome:n2']);
     });
 });
 

@@ -344,13 +344,13 @@ describe('fetching a remembered song\'s source again (restorePlaybackSourceForSo
         await restorePlaybackSourceForSong(navidromeSong, sourceParams(refs, setLyrics, [navidromeSong]));
 
         expect(watch.take()).toEqual([
-            'cover=null key=navidrome:n1',
-            'wait navidrome song n1 | song=N key=navidrome:n1',
-            'audio=https://navi.test/stream/n1 key=navidrome:n1',
-            'lyrics=null | song=N key=navidrome:n1',
-            'song=N key=navidrome:n1',
+            'cover=null key=online:navidrome:n1',
+            'wait navidrome song n1 | song=N key=online:navidrome:n1',
+            'audio=https://navi.test/stream/n1 key=online:navidrome:n1',
+            'lyrics=null | song=N key=online:navidrome:n1',
+            'song=N key=online:navidrome:n1',
         ]);
-        expect(refs.currentSongRef.current).toBe('navidrome:n1');
+        expect(refs.currentSongRef.current).toBe('online:navidrome:n1');
         expect(usePlaybackStore.getState().currentSong?.playbackSourceRevision).toEqual(expect.any(String));
     });
 
@@ -713,17 +713,17 @@ describe('the audio address a restore writes, per kind of song', () => {
         const song = structuredClone(navidromeSong) as SongResult & { navidromeData: { navidromeData: Record<string, unknown> } };
         song.navidromeData.navidromeData.coverArtUrl = 'https://navi.test/cover/n1';
         env.serverSong = { replayGain: { trackGain: -4 } };
-        registerPlaybackRepresentation(representation('navidrome:n1', 'n1:::1000:https://navi.test/stream/n1'));
+        registerPlaybackRepresentation(representation('online:navidrome:n1', 'n1:::1000:https://navi.test/stream/n1'));
 
         const { restored, log } = await restore(song);
 
         expect(log).toEqual([
-            'cover=null key=navidrome:n1',
-            'wait navidrome song n1 | song=N key=navidrome:n1',
-            'audio=https://navi.test/stream/n1 key=navidrome:n1 blobRef=blob:before fetchedAt=null',
-            'cover=https://navi.test/cover/n1 key=navidrome:n1',
-            'lyrics=null | song=N key=navidrome:n1',
-            'song=N key=navidrome:n1',
+            'cover=null key=online:navidrome:n1',
+            'wait navidrome song n1 | song=N key=online:navidrome:n1',
+            'audio=https://navi.test/stream/n1 key=online:navidrome:n1 blobRef=blob:before fetchedAt=null',
+            'cover=https://navi.test/cover/n1 key=online:navidrome:n1',
+            'lyrics=null | song=N key=online:navidrome:n1',
+            'song=N key=online:navidrome:n1',
         ]);
         expect(restored).toBe('restored');
         expect(song.navidromeData.navidromeData.replayGain).toEqual({ trackGain: -4 });
@@ -1335,12 +1335,12 @@ describe('a local or Navidrome restore on the HiFi route', () => {
         const { refs, restored, log } = await restoreOnHifi(song, 42);
 
         expect(log).toEqual([
-            'cover=null key=navidrome:n1',
-            'wait navidrome song n1 | song=N key=navidrome:n1',
-            'hifi N navidrome from 42 adopt | song=N key=navidrome:n1',
-            'cover=https://navi.test/cover/n1 key=navidrome:n1',
-            'lyrics=null | song=N key=navidrome:n1',
-            'song=N key=navidrome:n1',
+            'cover=null key=online:navidrome:n1',
+            'wait navidrome song n1 | song=N key=online:navidrome:n1',
+            'hifi N navidrome from 42 adopt | song=N key=online:navidrome:n1',
+            'cover=https://navi.test/cover/n1 key=online:navidrome:n1',
+            'lyrics=null | song=N key=online:navidrome:n1',
+            'song=N key=online:navidrome:n1',
         ]);
         expect(restored).toBe('restored');
         const [start] = env.hifiStarts;

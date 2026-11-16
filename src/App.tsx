@@ -116,7 +116,6 @@ import { useElectronVideoExportController } from './hooks/useElectronVideoExport
 import { useElectronWindowPlaybackHandoff } from './components/app/playback/restore/useElectronWindowPlaybackHandoff';
 import { useMediaSessionBridge } from './hooks/useMediaSessionBridge';
 import { usePlayerChromeAutoHide } from './hooks/usePlayerChromeAutoHide';
-import { useMacWallpaperHitRegions } from './hooks/useMacWallpaperHitRegions';
 import { useIdleCursorHide } from './hooks/useIdleCursorHide';
 import { usePlaybackAudioBridge } from './components/app/playback/bridges/usePlaybackAudioBridge';
 import { useTranscodeFallback } from './hooks/useTranscodeFallback';
@@ -439,10 +438,7 @@ export default function App() {
     } = useAudioSettingsStore(useShallow(selectAudioSettingsSnapshot));
     const {
         preventDisplaySleepDuringPlayback,
-        wallpaperMode,
     } = useDesktopSettingsStore(useShallow(selectDesktopSettingsSnapshot));
-    // macOS wallpaper mode: click catchers over the controls, so Stage Manager ignores those clicks.
-    useMacWallpaperHitRegions(wallpaperMode);
     const {
         stageTrackPillMode,
         stageTrackPillOnHome,
@@ -1550,9 +1546,7 @@ export default function App() {
         t: (key: string, fallback?: string) => t(key, fallback ?? ''),
     });
 
-    // Wallpaper mode removes normal window semantics (no minimize/maximize/close, no dragging, and
-    // click-through is managed by the main process), so the whole custom titlebar strip stays off.
-    const usesCustomWindowChrome = isElectronWindow && !wallpaperMode;
+    const usesCustomWindowChrome = isElectronWindow;
     const isPlayerPageTransparent = transparentPlayerBackground || enablePlayerPageNativeBlur;
     const shouldUseTransparentAppBackground = isPlayerPageTransparent;
     const appStyle = useMemo(() => buildAppStyle({
@@ -2732,7 +2726,7 @@ export default function App() {
             isElectronWindow={isElectronWindow}
             hideFullscreenButton={hideFullscreenButton}
             usesCustomWindowChrome={usesCustomWindowChrome}
-            useCustomWindowRadius={isElectronWindow && transparentPlayerBackground && !wallpaperMode}
+            useCustomWindowRadius={isElectronWindow && transparentPlayerBackground}
             showTransparentWindowBorder={showTransparentWindowBorder}
             isPlayerView={isPlayerView}
             isTitlebarRevealed={isTitlebarRevealed}

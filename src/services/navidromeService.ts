@@ -43,6 +43,11 @@ const MAX_STABLE_URL_SALT_CACHE_ENTRIES = 512;
 type SubsonicParamPrimitive = string | number | boolean;
 type SubsonicParamValue = SubsonicParamPrimitive | SubsonicParamPrimitive[];
 
+/** 最近播放和 Omni 账号用同一个 id：用户名加去掉末尾斜杠的服务器地址。 */
+export const navidromeAccountId = (config: { serverUrl?: string; username?: string } | null | undefined): string => (
+    config?.serverUrl && config.username ? `${config.username}@${config.serverUrl.replace(/\/+$/, '')}` : ''
+);
+
 // Check if Navidrome is enabled
 export const isNavidromeEnabled = (): boolean => {
     return localStorage.getItem(ENABLED_KEY) === 'true';
@@ -341,7 +346,8 @@ export const navidromeApi = {
         config: NavidromeConfig,
         type: 'alphabeticalByName' | 'alphabeticalByArtist' | 'newest' | 'recent' | 'frequent' | 'random' = 'alphabeticalByName',
         size: number = 50,
-        offset: number = 0
+        offset: number = 0,
+        strict = false,
     ): Promise<SubsonicAlbum[]> => {
         try {
             const res = await fetchSubsonic<AlbumList2Response>(config, 'getAlbumList2', {
@@ -352,7 +358,9 @@ export const navidromeApi = {
             if (res['subsonic-response'].status === 'ok') {
                 return res['subsonic-response'].albumList2?.album || [];
             }
+            if (strict) throw new Error('Navidrome albums were not read');
         } catch (e) {
+            if (strict) throw e;
             console.error('[Navidrome] getAlbumList2 failed:', e);
         }
         return [];
@@ -371,13 +379,15 @@ export const navidromeApi = {
         return null;
     },
 
-    getPlaylists: async (config: NavidromeConfig): Promise<SubsonicPlaylist[]> => {
+    getPlaylists: async (config: NavidromeConfig, strict = false): Promise<SubsonicPlaylist[]> => {
         try {
             const res = await fetchSubsonic<PlaylistsResponse>(config, 'getPlaylists');
             if (res['subsonic-response'].status === 'ok') {
                 return res['subsonic-response'].playlists?.playlist || [];
             }
+            if (strict) throw new Error('Navidrome playlists were not read');
         } catch (e) {
+            if (strict) throw e;
             console.error('[Navidrome] getPlaylists failed:', e);
         }
         return [];
@@ -524,14 +534,16 @@ export const navidromeApi = {
         return false;
     },
 
-    getArtists: async (config: NavidromeConfig): Promise<SubsonicArtist[]> => {
+    getArtists: async (config: NavidromeConfig, strict = false): Promise<SubsonicArtist[]> => {
         try {
             const res = await fetchSubsonic<ArtistsIndexResponse>(config, 'getArtists');
             if (res['subsonic-response'].status === 'ok') {
                 const indexes = res['subsonic-response'].artists?.index || [];
                 return indexes.flatMap(index => index.artist || []);
             }
+            if (strict) throw new Error('Navidrome artists were not read');
         } catch (e) {
+            if (strict) throw e;
             console.error('[Navidrome] getArtists failed:', e);
         }
         return [];
@@ -641,7 +653,8 @@ export const navidromeApi = {
         query: string,
         artistCount: number = 5,
         albumCount: number = 10,
-        songCount: number = 20
+        songCount: number = 20,
+        offsets?: { songOffset?: number; albumOffset?: number; artistOffset?: number; strict?: boolean },
     ): Promise<Search3Response['searchResult3']> => {
         try {
             const res = await fetchSubsonic<Search3Response>(config, 'search3', {
@@ -649,11 +662,16 @@ export const navidromeApi = {
                 artistCount: artistCount.toString(),
                 albumCount: albumCount.toString(),
                 songCount: songCount.toString(),
+                ...(offsets?.songOffset ? { songOffset: offsets.songOffset.toString() } : {}),
+                ...(offsets?.albumOffset ? { albumOffset: offsets.albumOffset.toString() } : {}),
+                ...(offsets?.artistOffset ? { artistOffset: offsets.artistOffset.toString() } : {}),
             });
             if (res['subsonic-response'].status === 'ok') {
                 return res['subsonic-response'].searchResult3 || {};
             }
+            if (offsets?.strict) throw new Error('Navidrome search was not read');
         } catch (e) {
+            if (offsets?.strict) throw e;
             console.error('[Navidrome] search failed:', e);
         }
         return {};
@@ -685,7 +703,7 @@ export const navidromeApi = {
             album: displayAlbum,
             durationMs: song.duration * 1000, // Convert to milliseconds
             isNavidrome: true,
-            sourceRef: { kind: 'navidrome', mediaId: song.id },
+            sourceRef: { kind: 'online', providerId: 'navidrome', mediaId: song.id },
             navidromeData: {
                 id: song.id,
                 streamUrl: navidromeApi.getStreamUrl(config, song.id),

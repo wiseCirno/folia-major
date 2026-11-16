@@ -3,10 +3,8 @@ import { useOnlineProviderAccountStore } from '../../stores/useOnlineProviderAcc
 import type { AmllDbPlatform, LyricData, LyricProviderSource, SongResult } from '../../types';
 import type { ChorusRange, ProviderLyricsResult } from '../../types/onlineMusic';
 import { calculateMatchScore } from './matchScore';
-import { searchQQLyrics, fetchQQLyrics } from '../../services/onlineMusic/qq/qqLyricProvider';
 import { fetchAmllDbLyrics, getAmllDbMusicIds, searchAmllDbSongs } from './providers/amllDbProvider';
 import { buildAmllDbSearchQueries, toAmllDbSongResults } from './amllDbCandidates';
-import { applyChorusRangesByTime } from './chorusEffects';
 import { hasRenderableLyrics } from './validity';
 import { LYRIC_SOURCE_IDS, getLyricSource } from './lyricSources';
 
@@ -17,8 +15,6 @@ import { LYRIC_SOURCE_IDS, getLyricSource } from './lyricSources';
 const AMLL_DB_SEARCH_PAGE_SIZE = 50;
 const AMLL_DB_MAX_RESULTS = 20;
 const MATCH_WINDOW_SEARCH_LIMIT = 50;
-// QQ's search has only ever been asked for one page of 20 songs at most.
-const QQ_SEARCH_PAGE_MAX = 20;
 
 export type LyricMatchSearchTarget = {
     title: string;
@@ -75,11 +71,7 @@ const sortByMatchScore = (songs: SongResult[], target: LyricMatchSearchTarget) =
     [...songs].sort((a, b) => calculateMatchScore(target, b) - calculateMatchScore(target, a))
 );
 
-const hasChorusMarkers = (lyrics: LyricData | null): boolean => (
-    Boolean(lyrics?.lines.some(line => line.isChorus))
-);
-
-// AMLL 官方搜索直接返回已收录的歌曲，不用再先搜网易云 / QQ 后逐个探测（#515）。
+// AMLL 官方搜索直接返回已收录的歌曲。
 // 按 buildAmllDbSearchQueries 的顺序搜，有结果就停；请求失败（限流、网络错误）时直接停止，不再发兜底请求。
 export async function searchAmllDbLyricCandidates(
     query: string,
@@ -98,8 +90,6 @@ export async function searchAmllDbLyricCandidates(
     return [];
 }
 
-// The AMLL DB lyric of a candidate its search gave, with NetEase's chorus ranges when the lyric
-// was kept under a NetEase id and marks no chorus itself.
 async function fetchAmllDbCandidateLyrics(song: SongResult): Promise<LyricSourceLyrics | null> {
     const platform = song.amllDbPlatform;
     if (!platform) {
@@ -107,14 +97,8 @@ async function fetchAmllDbCandidateLyrics(song: SongResult): Promise<LyricSource
     }
     const fetchedLyrics = await fetchAmllDbLyrics(platform, getAmllDbMusicIds(platform, song));
     const lyrics = hasRenderableLyrics(fetchedLyrics) ? fetchedLyrics : null;
-    const chorusRanges = platform === 'ncm' && !hasChorusMarkers(lyrics)
-        ? await getOnlineMusicProvider('netease')?.lyrics?.getChorusRanges?.(song.id) ?? []
-        : [];
-
     return {
-        lyrics: lyrics && chorusRanges.length > 0
-            ? applyChorusRangesByTime(lyrics, chorusRanges)
-            : lyrics,
+        lyrics,
         isPureMusic: false,
         matchedLyricsProviderPlatform: platform,
     };
@@ -130,33 +114,10 @@ const platformAccess = (providerId: LyricProviderSource): LyricSourceAccess => (
 
 // Where a source differs from that. A source with no entry here is reached as its platform alone.
 const OWN_ACCESS: Partial<Record<LyricProviderSource, Partial<LyricSourceAccess>>> = {
-    netease: {
-        knownById: (songId) => {
-            const numericId = typeof songId === 'number' ? songId : Number(songId);
-            return Number.isSafeInteger(numericId) && numericId > 0 ? numericId : null;
-        },
-        sharesChorusRanges: true,
-    },
-    // AMLL DB is searched through its own API, by the words typed like the platforms (#515).
+    // AMLL DB is searched through its own API, by the words typed.
     amll: {
         search: (query, _limit, target) => searchAmllDbLyricCandidates(query, target),
         fetch: song => fetchAmllDbCandidateLyrics(song),
-    },
-    // QQ's lyrics are read from QQ's own lyric service, which needs no QQ account and knows a
-    // song by its mid.
-    qq: {
-        search: (query, limit) => searchQQLyrics(query, 1, Math.min(limit, QQ_SEARCH_PAGE_MAX)),
-        fetch: async (song, lent) => ({ lyrics: await fetchQQLyrics(song, lent) ?? null, isPureMusic: false }),
-        songKey: song => String(song.qqMid ?? song.id),
-        marksChorusOnFetch: true,
-    },
-    kugou: {
-        songKey: song => String(song.kgHash ?? song.id).toUpperCase(),
-    },
-    // Its track ids are 1-30 digits, past what a number holds exactly: kept as text, never made a number.
-    qishui: {
-        knownById: songId => (typeof songId === 'string' ? /^\d{1,30}$/.test(songId) ? songId : null
-            : Number.isSafeInteger(songId) && songId >= 0 ? String(songId) : null),
     },
 };
 

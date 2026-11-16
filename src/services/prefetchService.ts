@@ -13,7 +13,7 @@ import { getPlatformLyricSource } from '../utils/lyrics/lyricSources';
 import { settlesOnOwnWordTiming } from '../utils/lyrics/ownWordTiming';
 import { loadOnlineLyricsState, markOnlineLyricsPureMusic, resolveOnlineLyrics, saveOnlineLyricsState } from '../utils/onlineLyricsState';
 import type { AudioQualityPreference, MediaId } from '../types/onlineMusic';
-import { getPlaybackSongKey, getPlaybackSourceRef, resolveNavidromePlaybackCarrier } from '../utils/appPlaybackGuards';
+import { getPlaybackSongKey, getPlaybackSourceRef, isNavidromePlaybackSource, resolveNavidromePlaybackCarrier } from '../utils/appPlaybackGuards';
 import { nextTransitionSong, queueIndexOf } from '../utils/playbackNeighbors';
 import { omni } from './onlineMusic/omni';
 import { getSongResourceCacheKey } from './onlineMusic/resourceKeys';
@@ -301,7 +301,7 @@ const prefetchSong = async (
     if (signal.aborted) return;
 
     const sourceRef = getPlaybackSourceRef(song);
-    if (sourceRef.kind === 'local' || sourceRef.kind === 'navidrome') {
+    if (sourceRef.kind === 'local' || isNavidromePlaybackSource(sourceRef)) {
         // Nothing light to fetch for a library song - its lyrics and cover come with the record - but
         // the automix analysis is owed to it like to any track. Skipping it here left every library
         // transition with no profile at either end, so each one came out a plain fade.

@@ -19,7 +19,7 @@ import {
     buildTaskbarControlsFromPlaybackSyncBridge,
 } from '../../../../utils/playbackSyncBridge';
 import { resolveStagePlayerPositionSec } from '../../../../utils/stagePlayerSnapshot';
-import { getPlaybackSongKey, getPlaybackSourceRef } from '../../../../utils/appPlaybackGuards';
+import { getPlaybackSongKey, getPlaybackSourceRef, isNavidromePlaybackSource } from '../../../../utils/appPlaybackGuards';
 import { omni } from '../../../../services/onlineMusic/omni';
 import { createRemoteTrackTransitionFeed, type RemoteTrackTransitionFeed } from './remoteTrackTransitionFeed';
 import { buildRemoteQueueItems, isRemoteQueueCommand } from './remoteQueueFeed';
@@ -185,7 +185,7 @@ export const useElectronPlaybackBridge = ({
         && !isNowPlayingStageActive
         && (
             currentSongSource?.kind === 'local'
-            || currentSongSource?.kind === 'navidrome'
+            || (currentSongSource ? isNavidromePlaybackSource(currentSongSource) : false)
             || (currentSongSource?.kind === 'online' && omni.canLikeSong(currentSong))
         ),
     );

@@ -998,55 +998,15 @@ export function useLibraryPlaybackController({
                                 useOnlineLyrics: true,
                             };
 
-                            if (bestMatch.source === 'netease' || (bestMatch.source === 'amll' && bestMatch.matchedLyricsProviderPlatform === 'ncm')) {
+                            if (bestMatch.source === 'amll' && bestMatch.matchedLyricsProviderPlatform === 'ncm') {
                                 newMatchData.matchedSongId = bestMatch.id as number;
-                                try {
-                                    const nSong = await omni.getSongDetail('netease', bestMatch.id);
-                                    if (nSong) {
-                                        const metadata = getProviderSongMetadata(nSong, 'netease');
-                                        newMatchData.matchedArtists = metadata.artists.map(artist => artist.name).join(', ');
-                                        newMatchData.matchedAlbumName = metadata.album?.name;
-                                        const coverUrl = metadata.coverUrl;
-                                        if (coverUrl) {
-                                            newMatchData.matchedCoverUrl = coverUrl.replace('http:', 'https:');
-                                            newMatchData.useOnlineCover = true;
-                                        }
-                                    }
-                                } catch (err) {
-                                    console.error('[NaviPlay] Failed to fetch NetEase song detail for metadata:', err);
-                                }
                             }
 
                             await saveToCache(getNavidromeMatchCacheKey(navidromeSong), newMatchData);
                         }
                     }
 
-                    if (!isAutoMatched) {
-                        const searchQuery = `${navidromeSong.name} ${artistName}`.trim();
-                        const searchPage = await omni.searchProviderSongs('netease', searchQuery, { limit: 1, offset: 0 });
 
-                        if (searchPage?.items?.length) {
-                            const matchedSong = searchPage.items[0];
-                            const lyricResult = await omni.getLyrics(matchedSong);
-                            nextLyrics = lyricResult?.lyrics || null;
-                            (navidromeSong as NavidromeSong & { matchedIsPureMusic?: boolean; }).matchedIsPureMusic = lyricResult?.isPureMusic || false;
-                            if (nextLyrics || lyricResult?.isPureMusic) {
-                                autoMatchedLyrics = nextLyrics;
-                                isAutoMatched = true;
-                                matchedLyricsSource = 'netease';
-
-                            const newMatchData: NavidromeMatchData = {
-                                matchedSongId: matchedSong.id,
-                                matchedLyrics: nextLyrics || undefined,
-                                matchedIsPureMusic: lyricResult?.isPureMusic || false,
-                                matchedLyricsSource: 'netease',
-                                    lyricsSource: 'online',
-                                    useOnlineLyrics: true,
-                                };
-                                await saveToCache(getNavidromeMatchCacheKey(navidromeSong), newMatchData);
-                            }
-                        }
-                    }
                 } catch (error) {
                     console.warn('[App] Failed to fetch Netease lyrics for Navidrome song:', error);
                 }
@@ -1596,7 +1556,7 @@ export function useLibraryPlaybackController({
                     matchedLyricsProviderPlatform: bestMatch.matchedLyricsProviderPlatform,
                     lyricsSource: 'online',
                     useOnlineLyrics: true,
-                    matchedSongId: bestMatch.source === 'netease' || (bestMatch.source === 'amll' && bestMatch.matchedLyricsProviderPlatform === 'ncm')
+                    matchedSongId: bestMatch.source === 'amll' && bestMatch.matchedLyricsProviderPlatform === 'ncm'
                         ? bestMatch.id as number
                         : undefined,
                     matchedIsPureMusic: false,

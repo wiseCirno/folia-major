@@ -13,7 +13,7 @@ import id from '../../../src/i18n/locales/in';
 const echo = (key: string) => key;
 
 const ALL_SECTIONS: SettingsSectionId[] = [
-    'appearance', 'player', 'home', 'graphics', 'playback', 'lyrics', 'general', 'interaction', 'integration', 'ai', 'storage', 'desktop', 'remote', 'mods', 'developer',
+    'appearance', 'player', 'home', 'graphics', 'playback', 'lyrics', 'general', 'interaction', 'integration', 'ai', 'storage', 'developer',
 ];
 
 const lookup = (bundle: Record<string, unknown>, key: string): unknown => (
@@ -36,8 +36,6 @@ describe('settingsNavModel', () => {
         const desktopOnlyCount = SETTINGS_NAV_GROUP_SPECS.flatMap(group => group.sections)
             .filter(section => section.electronOnly).length;
 
-        expect(ids).not.toContain('desktop');
-        expect(ids).not.toContain('mods');
         expect(ids).not.toContain('ai');
         expect(ids).toHaveLength(ALL_SECTIONS.length - desktopOnlyCount);
         expect(groups.every(group => group.items.length > 0)).toBe(true);
