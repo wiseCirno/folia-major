@@ -951,12 +951,16 @@ export const omni = {
     },
 
     async getPersonalFmCatalog(providerId: OmniProviderId) {
-        return requireOnlineMusicProvider(providerId).recommendations?.getPersonalFmCatalog?.() ?? DEFAULT_PERSONAL_FM_CATALOG;
+        const provider = getOnlineMusicProvider(providerId);
+        if (!provider) return DEFAULT_PERSONAL_FM_CATALOG;
+        return provider.recommendations?.getPersonalFmCatalog?.() ?? DEFAULT_PERSONAL_FM_CATALOG;
     },
 
     /** The mode choices of one of the provider's extra radios; null where the provider has no such radio. */
     async getPersonalFmStationCatalog(providerId: OmniProviderId, station: string): Promise<PersonalFmCatalog | null> {
-        return (await requireOnlineMusicProvider(providerId).recommendations?.getPersonalFmCatalog?.(station)) ?? null;
+        const provider = getOnlineMusicProvider(providerId);
+        if (!provider) return null;
+        return (await provider.recommendations?.getPersonalFmCatalog?.(station)) ?? null;
     },
 
     async getPersonalFm(options?: PersonalFmRequestOptions): Promise<UnifiedSong[]> {

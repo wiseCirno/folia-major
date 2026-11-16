@@ -32,7 +32,8 @@ import {
     setEmbyFavorite,
     type EmbyItem,
 } from './embyApi';
-import { clearEmbySession, getEmbySession, saveEmbySession, type EmbySession } from './embySession';
+import { clearEmbySession, getEmbySession, rememberLockedEmbyToken, rememberLockedEmbyUser, saveEmbySession, type EmbySession } from './embySession';
+import { readDeploymentLock } from '../deploymentLock';
 
 // src/services/onlineMusic/emby/embyProvider.ts
 // Emby as an Omni platform. The browser talks to the listener's server, or to the one pinned at build time.
@@ -286,6 +287,20 @@ export const embyProvider: OnlineMusicProvider = {
             }
         },
         async getLoginStatus() {
+            if (locked()) {
+                const lock = readDeploymentLock();
+                const current = getEmbySession();
+                if (lock && current && !current.accessToken && lock.username && lock.password) {
+                    try {
+                        const signedIn = await authenticateEmby(lock.serverUrl, lock.username, lock.password);
+                        rememberLockedEmbyToken(signedIn.accessToken);
+                        rememberLockedEmbyUser(signedIn.userId, signedIn.username);
+                    } catch (error) {
+                        console.warn('[Emby] locked sign-in failed', error);
+                        return null;
+                    }
+                }
+            }
             const stored = getEmbySession();
             if (!stored?.serverUrl || !stored.accessToken) return null;
             try {
@@ -293,7 +308,7 @@ export const embyProvider: OnlineMusicProvider = {
                 return userFrom(session);
             } catch (error) {
                 console.warn('[Emby] session was not confirmed', error);
-                return locked() ? userFrom(stored) : null;
+                return null;
             }
         },
         async logout() {

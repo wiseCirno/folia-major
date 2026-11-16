@@ -7,11 +7,17 @@ const STORAGE_KEY = 'emby_session';
 
 let lockedUserId = '';
 let lockedUsername = '';
+let lockedAccessToken = '';
 
 /** Remembers which Emby user an API key should read. The key itself stays in the build env. */
 export const rememberLockedEmbyUser = (userId: string, username: string): void => {
     lockedUserId = userId;
     lockedUsername = username;
+};
+
+/** Keeps a username-and-password sign-in for this page load. The password is not written down. */
+export const rememberLockedEmbyToken = (accessToken: string): void => {
+    lockedAccessToken = accessToken;
 };
 
 export interface EmbySession {
@@ -50,7 +56,7 @@ export const getEmbySession = (): EmbySession | null => {
             serverUrl: lock.serverUrl,
             userId: lockedUserId,
             username: lock.username || lockedUsername || 'Emby',
-            accessToken: lock.apiKey,
+            accessToken: lock.apiKey || lockedAccessToken,
             locked: true,
         };
     }
