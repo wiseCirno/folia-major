@@ -95,6 +95,11 @@
     transform-origin: 0 0;
 }
 
+/* 倾斜时整面墙在转。没有单独的合成层，每一度都会把磁贴上的封面重画一遍。回正后拿掉，避免字发糊。 */
+.lattice-world[data-bravais-tilted] {
+    will-change: transform;
+}
+
 .lattice-poster {
     position: absolute;
     overflow: hidden;

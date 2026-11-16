@@ -1,17 +1,19 @@
-import type { SongResult, UnifiedSong } from '../../../types';
+import type { SongResult, UnifiedSong } from '@/types.ts';
 import type {
     AudioQualityPreference,
     LoginState,
     MediaId,
     OnlineMusicProvider,
     ProviderAudioSource,
+    ProviderCollection,
     ProviderLoginForm,
     ProviderLyricsResult,
     ProviderPage,
     ProviderUser,
-} from '../../../types/onlineMusic';
-import { OnlineProviderError } from '../../../types/onlineMusic';
-import { LyricParserFactory } from '../../../utils/lyrics/LyricParserFactory';
+} from '@/types/onlineMusic.ts';
+import { OnlineProviderError } from '@/types/onlineMusic.ts';
+import i18n from '@/i18n/config.ts';
+import { LyricParserFactory } from '@/utils/lyrics/LyricParserFactory.ts';
 import { deploymentLocksPlatform } from '../deploymentLock';
 import {
     authenticateEmby,
@@ -19,6 +21,12 @@ import {
     embyStreamUrl,
     ensureEmbyUser,
     getEmbyItem,
+    listEmbyAlbumAudio,
+    listEmbyAlbums,
+    listEmbyLatest,
+    listEmbyLibraryAudio,
+    listEmbyMusicLibraries,
+    listEmbySuggestions,
     readEmbyLyricText,
     searchEmbyAudio,
     setEmbyFavorite,
@@ -55,13 +63,23 @@ const toSong = (session: EmbySession, item: EmbyItem): UnifiedSong => {
         id: item.Id,
         name: item.Name,
         artists,
-        album: { id: item.AlbumId || 0, name: item.Album || '', coverUrl: embyImageUrl(session, item.Id) },
+        album: { id: item.AlbumId || 0, name: item.Album || '', coverUrl: embyImageUrl(session, item) },
         durationMs: Math.round((item.RunTimeTicks ?? 0) / 10000),
         sourceRef: { kind: 'online', providerId: PROVIDER_ID, mediaId: item.Id },
     };
 };
 
-const pageOf = (items: UnifiedSong[], total: number, offset: number): ProviderPage<UnifiedSong> => ({
+const albumCollection = (session: EmbySession, item: EmbyItem): ProviderCollection => ({
+    providerId: PROVIDER_ID,
+    id: item.Id,
+    name: item.Name,
+    type: 'album',
+    trackCount: item.ChildCount,
+    coverUrl: embyImageUrl(session, item),
+    creator: item.AlbumArtist ? { id: 0, nickname: item.AlbumArtist } : undefined,
+});
+
+const pageOf = <T>(items: T[], total: number, offset: number): ProviderPage<T> => ({
     items,
     total,
     hasMore: offset + items.length < total,
@@ -87,15 +105,16 @@ export const embyProvider: OnlineMusicProvider = {
         playback: true,
         lyrics: true,
         auth: true,
-        userLibrary: false,
-        playlists: false,
+        userLibrary: true,
+        playlists: true,
         albums: false,
         artists: false,
-        recommendations: false,
+        recommendations: true,
         mutations: true,
         wordByWordLyrics: false,
         likes: true,
-        userAlbums: false,
+        userAlbums: true,
+        explore: true,
         playlistTrackMutations: false,
         playbackReports: false,
         songDetail: true,
@@ -139,6 +158,87 @@ export const embyProvider: OnlineMusicProvider = {
             if (!text?.trim()) return { lyrics: null, isPureMusic: false };
             const lyrics = await LyricParserFactory.parse({ type: 'local', lrcContent: text });
             return { lyrics, isPureMusic: false };
+        },
+    },
+    library: {
+        async getUserPlaylists(_userId, limit, offset) {
+            const session = await requireSession();
+            const libraries = await listEmbyMusicLibraries(session);
+            const items = libraries.map((library): ProviderCollection => ({
+                providerId: PROVIDER_ID,
+                id: library.Id,
+                name: library.Name,
+                type: 'playlist',
+                trackCount: library.ChildCount,
+                coverUrl: embyImageUrl(session, library),
+            }));
+            return pageOf(items.slice(offset, offset + limit), items.length, offset);
+        },
+        async getUserAlbums(_userId, limit, offset) {
+            const session = await requireSession();
+            const result = await listEmbyAlbums(session, limit, offset);
+            return pageOf(result.items.map(item => albumCollection(session, item)), result.total, offset);
+        },
+    },
+    catalog: {
+        async getPlaylistTracks(id, limit, offset) {
+            const session = await requireSession();
+            const result = await listEmbyLibraryAudio(session, String(id), limit, offset);
+            return pageOf(result.items.map(item => toSong(session, item)), result.total, offset);
+        },
+        async getAlbumTracks(id, limit = 500, offset = 0) {
+            const session = await requireSession();
+            const result = await listEmbyAlbumAudio(session, String(id), limit, offset);
+            return pageOf(result.items.map(item => toSong(session, item)), result.total, offset);
+        },
+        async getAlbumDetail(id) {
+            const session = await requireSession();
+            const item = await getEmbyItem(session, String(id));
+            return item?.Id && item.Name ? albumCollection(session, item) : null;
+        },
+    },
+    recommendations: {
+        async getDailySongs() {
+            const session = await requireSession();
+            const suggested = await listEmbySuggestions(session, 'Audio', 30);
+            const items = suggested.items.length > 0 ? suggested.items : (await listEmbyLatest(session, 'Audio', 30)).items;
+            return items.map(item => toSong(session, item));
+        },
+    },
+    explore: {
+        async getFeed() {
+            const session = await requireSession();
+            const [latestSongs, latestAlbums, suggestions] = await Promise.all([
+                listEmbyLatest(session, 'Audio', 12),
+                listEmbyLatest(session, 'MusicAlbum', 12),
+                listEmbySuggestions(session, 'Audio', 12),
+            ]);
+            const sections = [
+                { id: 'latest-songs', title: i18n.t('emby.latestSongs'), items: latestSongs.items.map(item => ({ kind: 'song' as const, song: toSong(session, item) })) },
+                { id: 'latest-albums', title: i18n.t('emby.latestAlbums'), items: latestAlbums.items.map(item => ({ kind: 'collection' as const, collection: albumCollection(session, item) })) },
+                { id: 'suggestions', title: i18n.t('emby.suggestions'), items: suggestions.items.map(item => ({ kind: 'song' as const, song: toSong(session, item) })) },
+            ].filter(section => section.items.length > 0);
+            return { sections, refreshReadsAnew: true };
+        },
+        async songsShownAs(songs) {
+            const session = getEmbySession();
+            const answers = new Map<string, UnifiedSong | null>();
+            if (!session?.accessToken) return answers;
+            for (const song of songs) {
+                const id = String(song.id);
+                if (song.album?.coverUrl) {
+                    answers.set(id, null);
+                    continue;
+                }
+                const albumId = song.album?.id ? String(song.album.id) : '';
+                const coverUrl = embyImageUrl(session, {
+                    Id: songIdOf(song),
+                    Type: 'Audio',
+                    AlbumId: albumId && albumId !== '0' ? albumId : undefined,
+                });
+                answers.set(id, coverUrl ? { ...song, album: { ...song.album, id: song.album?.id || 0, name: song.album?.name || '', coverUrl } } : null);
+            }
+            return answers;
         },
     },
     mutations: {

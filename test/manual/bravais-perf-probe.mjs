@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright';
@@ -76,9 +76,13 @@ const marker = path.basename(userDataDir);
 const readRaw = createProcessSampler(marker);
 const fixedViewport = options.width > 0 && options.height > 0;
 
+const systemChromium = ['/usr/bin/chromium-browser', '/usr/bin/chromium', '/usr/bin/google-chrome']
+    .find(candidate => existsSync(candidate));
 const context = await chromium.launchPersistentContext(userDataDir, {
     headless: !options.headed,
     channel: options.channel || undefined,
+    // Fedora 没有 apt-get，Playwright 自带内核缺 libicu。已装的系统 Chromium 自己带依赖。
+    executablePath: options.channel ? undefined : systemChromium,
     // --enable-precise-memory-info：performance.memory 不再按 100KB 量化、按时间缓存。
     args: ['--no-sandbox', '--enable-precise-memory-info', ...(fixedViewport ? [] : ['--start-maximized'])],
     viewport: fixedViewport ? { width: options.width, height: options.height } : null,

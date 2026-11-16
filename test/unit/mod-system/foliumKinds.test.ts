@@ -4,7 +4,6 @@ import { FOLIUM_ENTRY_NOTICE_WORDS, FOLIUM_KIND_NAMES, FOLIUM_KINDS } from '@/mo
 import { listFoliumHostRegistries } from '@/mods/folium/api';
 import en from '@/i18n/locales/en';
 import zhCN from '@/i18n/locales/zh-CN';
-import id from '@/i18n/locales/in';
 
 // test/unit/mod-system/foliumKinds.test.ts
 // The kinds table (kinds.ts) against what is built from it. The compiler holds
@@ -35,7 +34,7 @@ describe('the kinds table', () => {
 
     it('has the sentence of every failure notice in the three languages', () => {
         const words = new Set(Object.values(FOLIUM_ENTRY_NOTICE_WORDS));
-        const locales = { en, 'zh-CN': zhCN, in: id } as unknown as Record<string, { mods: { faultNotice: Record<string, string> } }>;
+        const locales = { en, 'zh-CN': zhCN } as unknown as Record<string, { mods: { faultNotice: Record<string, string> } }>;
         Object.entries(locales).forEach(([language, locale]) => {
             words.forEach((word) => {
                 expect(locale.mods.faultNotice[word], `${language}: mods.faultNotice.${word}`).toEqual(expect.any(String));

@@ -1,7 +1,7 @@
-import { OnlineProviderError } from '../../types/onlineMusic';
-import type { OnlineMusicProvider, OnlineProviderId, ProviderCapabilities } from '../../types/onlineMusic';
-import type { SongResult } from '../../types';
-import { getPlaybackSourceRef } from '../../utils/appPlaybackGuards';
+import { OnlineProviderError } from '@/types/onlineMusic.ts';
+import type { OnlineMusicProvider, OnlineProviderId, ProviderCapabilities } from '@/types/onlineMusic.ts';
+import type { SongResult } from '@/types.ts';
+import { getPlaybackSourceRef } from '@/utils/appPlaybackGuards.ts';
 import { readDeploymentLock } from './deploymentLock';
 import { embyProvider } from './emby/embyProvider';
 import { navidromeProvider } from './navidrome/navidromeProvider';

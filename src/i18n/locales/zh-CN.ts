@@ -2224,15 +2224,8 @@ export default {
     "amll": "AMLLDB",
   },
   "onlineProviderName": {
-    "appleMusic": "Apple Music",
-    "netease": "网易云",
-    "kugou": "酷狗",
-    "qq": "QQ音乐",
-    "bodian": "波点",
-    "ytm": "YT Music",
-    "spotify": "Spotify",
-    "qishui": "汽水",
-    "fnmusic": "飞牛",
+    "emby": "Emby",
+    "navidrome": "Navidrome",
   },
   "globalLyricOffset": {
     "title": "全局时间偏移",
@@ -4961,6 +4954,16 @@ export default {
   },
   "emby": {
     "title": "Emby",
+    "enable": "连接 Emby",
+    "notConfigured": "还没有连接 Emby",
+    "clearSettings": "清除",
+    "testConnection": "测试连接",
+    "testing": "连接中...",
+    "connectionSuccess": "连接成功",
+    "connectionFailed": "连接失败",
+    "latestSongs": "最新歌曲",
+    "latestAlbums": "最新专辑",
+    "suggestions": "为你推荐",
     "settings": "Emby 设置",
     "serverUrl": "服务器地址",
     "serverUrlPlaceholder": "例如: http://localhost:8096",
@@ -4974,7 +4977,7 @@ export default {
     "errorBadServerUrl": "服务器地址无效，需要以 http:// 或 https:// 开头"
   },
   "navidrome": {
-    "title": "Navi",
+    "title": "Navidrome",
     "enable": "连接 Navidrome",
     "settings": "Navidrome 设置",
     "serverUrl": "服务器地址",

@@ -12,7 +12,6 @@ import {
     retiredModelHint,
 } from '../../../shared/ai/providerRegistry.mjs';
 import en from '../../../src/i18n/locales/en';
-import id from '../../../src/i18n/locales/in';
 import zhCN from '../../../src/i18n/locales/zh-CN';
 
 // test/unit/ai/providerRegistry.test.ts
@@ -168,7 +167,7 @@ describe('the presets the settings form lists', () => {
         }
     });
 
-    it.each([['en', en], ['zh-CN', zhCN], ['in', id]])('names every preset in %s', (_locale, messages) => {
+    it.each([['en', en], ['zh-CN', zhCN]])('names every preset in %s', (_locale, messages) => {
         const options = (messages as { options: Record<string, string> }).options;
         for (const preset of AI_PROVIDER_PRESETS) {
             expect(options[`aiProvider_${preset.id}`], preset.id).toBeTruthy();

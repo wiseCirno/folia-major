@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import en from '../../../src/i18n/locales/en';
 import zhCN from '../../../src/i18n/locales/zh-CN';
-import id from '../../../src/i18n/locales/in';
 
 // test/unit/hifi/hifiLocaleText.test.ts
 // The HiFi texts that state facts, read from the shipped locales: the DoP warning says what a DAC
@@ -12,7 +11,7 @@ import id from '../../../src/i18n/locales/in';
 // PipeWire reports, never bit-perfect, say Folia cannot confirm what the DAC receives, and send the reader
 // to the DAC's own indicator or their ears.
 
-const LOCALES = { en, 'zh-CN': zhCN, in: id } as const;
+const LOCALES = { en, 'zh-CN': zhCN } as const;
 
 /** A dotted key read without the locale's type, so a key the type does not know yet reads as undefined. */
 const read = (locale: object, key: string): unknown => key.split('.').reduce<unknown>(
@@ -69,8 +68,6 @@ describe('HiFi locale texts', () => {
         expect(warnings.en).toMatch(/hiss/i);
         expect(warnings['zh-CN']).not.toMatch(/满幅|巨响|很响/);
         expect(warnings['zh-CN']).toMatch(/沙沙/);
-        expect(warnings.in).not.toMatch(/skala penuh|keras/i);
-        expect(warnings.in).toMatch(/desis/i);
     });
 
     it('says what holds a busy device on every platform, and does not offer exclusive mode as the way out', () => {
@@ -82,22 +79,17 @@ describe('HiFi locale texts', () => {
         expect(busy['zh-CN']).not.toMatch(/独占/);
         expect(busy['zh-CN']).toMatch(/音频服务/);
         expect(busy['zh-CN']).toMatch(/播放引擎设置/);
-        expect(busy.in).not.toMatch(/eksklusif/i);
-        expect(busy.in).toMatch(/server suara/i);
-        expect(busy.in).toMatch(/pengaturan mesin pemutaran/);
     });
 
     it('says the engine choice only applies to local files and Navidrome, and what mpv turns off', () => {
         const scope = textsOf('hifi.settings.engineDesc');
         expect(scope.en).toMatch(/only to local files and Navidrome/);
         expect(scope['zh-CN']).toMatch(/只对本地文件和 Navidrome/);
-        expect(scope.in).toMatch(/Hanya berlaku untuk berkas lokal dan lagu Navidrome/);
         for (const text of Object.values(scope)) expect(text).toMatch(/Web Audio/);
         const notice = textsOf('hifi.settings.engineMpvNotice');
         for (const word of ['equalizer', 'ReplayGain', 'smart transitions', 'lyric video export']) expect(notice.en).toContain(word);
         for (const word of ['均衡器', 'ReplayGain', '智能过渡', '歌词视频导出']) expect(notice['zh-CN']).toContain(word);
-        for (const word of ['equalizer', 'ReplayGain', 'transisi pintar', 'ekspor video lirik']) expect(notice.in).toContain(word);
-        expect(textsOf('hifi.settings.engineWeb')).toEqual({ en: 'Web Audio', 'zh-CN': 'Web Audio', in: 'Web Audio' });
+        expect(textsOf('hifi.settings.engineWeb')).toEqual({ en: 'Web Audio', 'zh-CN': 'Web Audio' });
         for (const text of Object.values(textsOf('hifi.settings.engineMpv'))) expect(text).toMatch(/^mpv/);
     });
 
@@ -105,7 +97,6 @@ describe('HiFi locale texts', () => {
         const exclusive = textsOf('hifi.settings.exclusiveDesc');
         expect(exclusive.en).toMatch(/system media controls are unavailable/);
         expect(exclusive['zh-CN']).toMatch(/系统媒体控制也不可用/);
-        expect(exclusive.in).toMatch(/kontrol media sistem tidak tersedia/);
         // The Linux note and the known-limits group are gone from the settings.
         for (const key of ['exclusiveLinuxNote', 'limitMediaControls', 'limitPipewireRateFoot', 'enable']) {
             expect(read(en, `hifi.settings.${key}`), key).toBeUndefined();
@@ -116,12 +107,10 @@ describe('HiFi locale texts', () => {
         // HifiOutputGroup writes "<mark> · <name>"; the hints quote the mark as it reads there.
         const mark = textsOf('hifi.settings.deviceDirect');
         expect(mark.en).toBe('Direct');
-        expect(mark.in).toBe('Langsung');
         for (const key of ['hifi.settings.deviceLinuxHint', 'hifi.settings.deviceDirectNote', 'hifi.signal.verdictDesc.sharedMixerLinux']) {
             const texts = textsOf(key);
             expect(texts.en).toContain('marked Direct');
             expect(texts['zh-CN']).toContain(`「${mark['zh-CN']}」`);
-            expect(texts.in).toContain('bertanda Langsung');
         }
     });
 
@@ -136,31 +125,23 @@ describe('HiFi PipeWire texts', () => {
         const title = textsOf('hifi.signal.verdict.ratePassthrough');
         expect(title.en).toBe('Sample rate passthrough (via PipeWire)');
         expect(title['zh-CN']).toBe('采样率直通（经 PipeWire）');
-        expect(title.in).toMatch(/PipeWire/);
         for (const key of ['hifi.signal.verdict.ratePassthrough', 'hifi.signal.verdictShort.ratePassthrough']) {
             const texts = textsOf(key);
             expect(texts.en).not.toMatch(/bit-perfect/i);
             expect(texts['zh-CN']).not.toMatch(/原生直通/);
-            expect(texts.in).not.toMatch(/bit-perfect/i);
         }
         // The sentence under it reads as PipeWire's report and says outright that this is not a bit-perfect check.
         const desc = textsOf('hifi.signal.verdictDesc.ratePassthrough');
         expect(desc.en).toMatch(/^According to PipeWire, /);
         expect(desc['zh-CN']).toMatch(/^按 PipeWire 的报告，/);
-        expect(desc.in).toMatch(/^Menurut PipeWire, /);
         expect(desc.en).toMatch(/not a bit-perfect check/);
         expect(desc['zh-CN']).toMatch(/不是对原生直通的确认/);
-        expect(desc.in).toMatch(/bukan pemeriksaan bit-perfect/);
     });
 
     it('says the PipeWire step is only what PipeWire reports, that Folia cannot confirm what the DAC receives, and points at the DAC or the ears', () => {
         const footnote = textsOf('hifi.signal.system.footnote');
         expect(footnote.en).toBe("This is what PipeWire reports. Folia can only read what PipeWire reports and cannot confirm what your DAC receives: check your DAC's sample-rate indicator, or listen.");
         expect(footnote['zh-CN']).toBe('以上是 PipeWire 报告的状态。Folia 只读得到 PipeWire 报的内容，确认不了 DAC 实际收到的采样率：请看 DAC 的采样率指示，或者用耳朵听。');
-        expect(footnote.in).toMatch(/hanya bisa membaca laporan PipeWire/);
-        expect(footnote.in).toMatch(/tidak bisa memastikan apa yang diterima DAC/);
-        expect(footnote.in).toMatch(/indikator laju sampel DAC/);
-        expect(footnote.in).toMatch(/dengarkan/);
     });
 
     it('names the setting and the folder the config line goes in, and why a busy device does not switch', () => {
@@ -211,7 +192,6 @@ describe('HiFi PipeWire texts', () => {
             expect(texts.en, key).not.toMatch(/\bverified\b|\bconfirmed\b/i);
             expect(texts['zh-CN'], key).not.toMatch(/已确认|已验证|逐位直通/);
             expect(texts.en.replace(/not a bit-perfect check|For bit-perfect output/g, ''), key).not.toMatch(/bit-perfect/i);
-            expect(texts.in, key).not.toMatch(/\bterverifikasi\b|\bdikonfirmasi\b|\bsudah dipastikan\b/i);
         }
     });
 });

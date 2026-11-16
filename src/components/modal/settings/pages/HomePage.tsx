@@ -7,15 +7,15 @@ import {
     HEX_CARD_MIN_OPACITY_DEFAULT,
     HEX_CARD_MIN_SCALE_BOUNDS,
     HEX_CARD_MIN_SCALE_DEFAULT,
-} from '../../../../utils/hexCardFalloff';
-import { chooseLibrarySuite, listLibrarySuiteOptions, useActiveLibrarySuiteId } from '../../../../library/app/librarySuiteChoice';
-import { isGridLibraryActive, useIsGridLibraryActive } from '../../../../library/app/gridLibraryActive';
-import { hasLibrarySuiteChoice } from '../../../../library/registry';
-import { omni } from '../../../../services/onlineMusic/omni';
-import { useGridViewSettingsStore } from '../../../../stores/useGridViewSettingsStore';
-import { useHomeLayoutSettingsStore } from '../../../../stores/useHomeLayoutSettingsStore';
-import { useOnlineProviderAccountStore } from '../../../../stores/useOnlineProviderAccountStore';
-import { SCRATCHPAD_HANDLE_STYLE_LABEL_KEYS, SCRATCHPAD_HANDLE_STYLES, useScratchpadSettingsStore } from '../../../../stores/useScratchpadSettingsStore';
+} from '@/utils/hexCardFalloff.ts';
+import { chooseLibrarySuite, listLibrarySuiteOptions, useActiveLibrarySuiteId } from '@/library/app/librarySuiteChoice.ts';
+import { isGridLibraryActive, useIsGridLibraryActive } from '@/library/app/gridLibraryActive.ts';
+import { hasLibrarySuiteChoice } from '@/library/registry.ts';
+import { omni } from '@/services/onlineMusic/omni.ts';
+import { useGridViewSettingsStore } from '@/stores/useGridViewSettingsStore.ts';
+import { useHomeLayoutSettingsStore } from '@/stores/useHomeLayoutSettingsStore.ts';
+import { useOnlineProviderAccountStore } from '@/stores/useOnlineProviderAccountStore.ts';
+import { SCRATCHPAD_HANDLE_STYLE_LABEL_KEYS, SCRATCHPAD_HANDLE_STYLES, useScratchpadSettingsStore } from '@/stores/useScratchpadSettingsStore.ts';
 import { Button, Chips, Group, PictureChoice, Reveal, Row, Segmented, Slider, Toggle, option, type SettingsGroupDef, type SettingsOptionDef } from '../kit';
 import { BRAVAIS_WALL_OPTIONS, BravaisWallGroup } from './BravaisWallGroup';
 import { GridCardsPreview, HomeCardStylePicture, ScratchpadHandleStylePicture } from './pictures';
@@ -120,10 +120,10 @@ const HomePage: React.FC = () => {
                 <Row option={O.tabs}>
                     <Chips
                         items={[
-                            { id: O.tabPlaylist.id, label: t('home.playlists'), checked: home.tabPlaylist, onChange: home.setTabPlaylist },
-                            { id: O.tabRadio.id, label: t('home.radioTab'), checked: home.tabRadio, onChange: home.setTabRadio },
                             { id: O.tabExplore.id, label: t('home.explore'), checked: home.tabExplore, onChange: home.setTabExplore, disabled: !hasExplore },
+                            { id: O.tabRadio.id, label: t('home.radioTab'), checked: home.tabRadio, onChange: home.setTabRadio },
                             { id: O.tabAlbums.id, label: t('home.albums'), checked: home.tabAlbums, onChange: home.setTabAlbums },
+                            { id: O.tabPlaylist.id, label: t('home.playlists'), checked: home.tabPlaylist, onChange: home.setTabPlaylist },
                         ]}
                     />
                 </Row>

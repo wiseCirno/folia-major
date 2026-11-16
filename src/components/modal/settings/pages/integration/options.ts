@@ -11,6 +11,10 @@ export const STREAMING: SettingsGroupDef = { id: 'streaming', titleKey: 'options
 
 export const O = {
     navidrome: option(SERVICES, 'navidrome', 'navidrome.enable'),
+    emby: option(SERVICES, 'emby', 'emby.enable'),
+    embyUrl: option(SERVICES, 'embyServerUrl', 'emby.serverUrl'),
+    embyUsername: option(SERVICES, 'embyUsername', 'emby.username'),
+    embyPassword: option(SERVICES, 'embyPassword', 'emby.password'),
     navidromeUrl: option(SERVICES, 'navidromeServerUrl', 'navidrome.serverUrl'),
     navidromeUsername: option(SERVICES, 'navidromeUsername', 'navidrome.username'),
     navidromePassword: option(SERVICES, 'navidromePassword', 'navidrome.password'),

@@ -30,6 +30,7 @@ import {
     NavidromeServerProfile,
 } from '../types/navidrome';
 import md5 from 'blueimp-md5';
+import { deploymentLocksPlatform, readDeploymentLock } from './onlineMusic/deploymentLock';
 
 // LocalStorage key for config
 const CONFIG_KEY = 'navidrome_config';
@@ -58,8 +59,13 @@ export const setNavidromeEnabled = (enabled: boolean): void => {
     localStorage.setItem(ENABLED_KEY, enabled ? 'true' : 'false');
 };
 
-// Get stored configuration
+// Get stored configuration. A pinned build uses the deployment values and does not read a saved login.
 export const getNavidromeConfig = (): NavidromeConfig | null => {
+    if (deploymentLocksPlatform('navidrome')) {
+        const lock = readDeploymentLock();
+        if (!lock?.username || !lock.password) return null;
+        return { serverUrl: lock.serverUrl, username: lock.username, passwordHash: lock.password };
+    }
     try {
         const stored = localStorage.getItem(CONFIG_KEY);
         if (stored) {

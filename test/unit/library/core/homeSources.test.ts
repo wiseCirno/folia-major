@@ -100,16 +100,16 @@ describe('home tabs', () => {
     const online = source();
     const supported = { supported: true, reason: null } as const;
 
-    it('lists playlist, radio, albums, local and navidrome in that order', () => {
+    it('lists explore, radio, albums, playlist and navidrome in that order', () => {
         const tabs = resolveHomeTabs({
-            visibility: { playlist: true, radio: true, explore: false, albums: true, local: true },
+            visibility: { playlist: true, radio: true, explore: true, albums: true, local: false },
             navidromeEnabled: true,
-            online,
+            online: source({ capabilities: { ...ALL, explore: true } }),
             localAvailability: supported,
         });
-        expect(tabs.map(tab => tab.key)).toEqual(['playlist', 'radio', 'albums', 'local', 'navidrome']);
+        expect(tabs.map(tab => tab.key)).toEqual(['explore', 'radio', 'albums', 'playlist', 'navidrome']);
         expect(tabs.every(tab => !tab.disabledReason)).toBe(true);
-        expect(translateHomeTabs(tabs, t).map(tab => tab.label)).toEqual(['home.playlists', 'home.radioTab', 'home.albums', 'localMusic.folder', 'navidrome.title']);
+        expect(translateHomeTabs(tabs, t).map(tab => tab.label)).toEqual(['home.explore', 'home.radioTab', 'home.albums', 'home.playlists', 'navidrome.title']);
     });
 
     it('hides the tabs the layout settings turn off and Navidrome when it is disabled', () => {
@@ -119,7 +119,7 @@ describe('home tabs', () => {
             online,
             localAvailability: supported,
         });
-        expect(tabs.map(tab => tab.key)).toEqual(['playlist', 'albums']);
+        expect(tabs.map(tab => tab.key)).toEqual(['albums', 'playlist']);
     });
 
     it('shows explore after radio only when the provider has a page of its own and the setting is on', () => {
@@ -131,9 +131,9 @@ describe('home tabs', () => {
             online,
             localAvailability: supported,
         }).map(tab => tab.key);
-        expect(keysOf(withPage)).toEqual(['playlist', 'radio', 'explore', 'albums']);
-        expect(keysOf(source())).toEqual(['playlist', 'radio', 'albums']);
-        expect(keysOf(withPage, { ...visibility, explore: false })).toEqual(['playlist', 'radio', 'albums']);
+        expect(keysOf(withPage)).toEqual(['explore', 'radio', 'albums', 'playlist']);
+        expect(keysOf(source())).toEqual(['radio', 'albums', 'playlist']);
+        expect(keysOf(withPage, { ...visibility, explore: false })).toEqual(['radio', 'albums', 'playlist']);
     });
 
     it('gives each unavailable tab its reason, naming the provider', () => {
@@ -144,10 +144,9 @@ describe('home tabs', () => {
             localAvailability: { supported: false, reason: 'insecure-http' },
         }), t);
         expect(tabs.map(tab => [tab.key, tab.disabledReason])).toEqual([
-            ['playlist', 'status.providerLibraryUnavailable(provider=fallback)'],
             ['radio', 'status.providerRecommendationsUnavailable(provider=fallback)'],
             ['albums', 'status.providerUserAlbumsUnavailable(provider=fallback)'],
-            ['local', 'localMusic.insecureHttpDisabled'],
+            ['playlist', 'status.providerLibraryUnavailable(provider=fallback)'],
         ]);
     });
 

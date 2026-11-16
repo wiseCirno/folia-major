@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import en from '@/i18n/locales/en';
-import id from '@/i18n/locales/in';
 import zh from '@/i18n/locales/zh-CN';
 import { omni } from '@/services/onlineMusic/omni';
 import { ONLINE_FAILURE_CASE_IDS, mediaFailureOf, onlineFailureOf } from '@/services/onlineMusic/failure/onlineFailureCase';
@@ -43,7 +42,7 @@ describe('the texts of the cases', () => {
                 return note!;
             }),
         ];
-        const missing = [...new Set(used)].flatMap(key => [['zh-CN', zh], ['en', en], ['in', id]].filter(([, texts]) => !textOf(texts, key)).map(([name]) => `${key} in ${name}`));
+        const missing = [...new Set(used)].flatMap(key => [['zh-CN', zh], ['en', en]].filter(([, texts]) => !textOf(texts, key)).map(([name]) => `${key} in ${name}`));
         expect(missing).toEqual([]);
     });
 

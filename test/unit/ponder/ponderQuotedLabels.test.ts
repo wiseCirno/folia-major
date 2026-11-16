@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import en from '@/i18n/locales/en';
 import zhCN from '@/i18n/locales/zh-CN';
-import id from '@/i18n/locales/in';
 
 // test/unit/ponder/ponderQuotedLabels.test.ts
 // A lesson text that puts a name in quotes names something on screen: 「…」 in Chinese, “…” in English
@@ -17,7 +16,6 @@ import id from '@/i18n/locales/in';
 const LOCALES = {
     'zh-CN': { bundle: zhCN, quoted: /「([^」]+)」/g },
     en: { bundle: en, quoted: /“([^”]+)”/g },
-    in: { bundle: id, quoted: /“([^”]+)”/g },
 } as const;
 
 /** Quoted on purpose although no label of the locale file reads so. */
@@ -35,12 +33,6 @@ const NOT_LABELS: Record<keyof typeof LOCALES, readonly string[]> = {
         'recent first', 'recently used', 'I pinned it and it still moves', 'finding a feature',
         'title - artist - album', 'just this artist’s songs',
         '⋯ More', '…', '⋯', 'kind · track count', '✓ In queue', 'open', 'Lattice',
-    ],
-    in: [
-        'Mode Wallpaper', 'Jendela Remote',
-        'yang terbaru di atas', 'baru dipakai', 'Sudah saya semat kok masih berpindah', 'mencari fitur',
-        'judul - artis - album', 'hanya lagu artis ini',
-        '⋯ Lainnya', '…', '⋯', 'jenis · jumlah lagu', '✓ Sudah di antrean', 'buka', 'Tembus pandang', 'Lattice',
     ],
 };
 

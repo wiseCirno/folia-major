@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import en from '@/i18n/locales/en';
 import zhCN from '@/i18n/locales/zh-CN';
-import ind from '@/i18n/locales/in';
-import vi from '@/i18n/locales/vi';
 import { listOnlineMusicProviders } from '@/services/onlineMusic/providerRegistry';
 
 // test/unit/i18n/providerName.test.ts
@@ -18,18 +16,15 @@ describe('provider names in the locale bundles', () => {
     it('has a short name for every registered provider, in every language', () => {
         const ids = listOnlineMusicProviders().map(provider => provider.id).sort();
         expect(ids.length).toBeGreaterThan(0);
-        for (const bundle of [en, zhCN, ind, vi]) {
+        for (const bundle of [en, zhCN]) {
             expect(Object.keys(names(bundle)).sort()).toEqual(ids);
         }
     });
 
     it('keeps the Mandarin names in the Mandarin bundle', () => {
         expect(names(zhCN)).toMatchObject({
-            netease: '网易云',
-            kugou: '酷狗',
-            qq: 'QQ音乐',
-            bodian: '波点',
-            qishui: '汽水',
+            navidrome: 'Navidrome',
+            emby: 'Emby',
         });
     });
 });

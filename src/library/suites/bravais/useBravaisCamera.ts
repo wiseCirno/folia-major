@@ -7,7 +7,6 @@ import {
     cameraFromViewCenter,
     getViewWorldBounds,
     viewCenterFromCamera,
-    type WallView,
     type WallViewCenter,
 } from '../../../components/wall/wallView';
 import type { WallCameraRange } from '../../../components/wall/finiteWall';
@@ -94,6 +93,17 @@ export const needsRecull = (visible: Bounds, culled: Bounds | null) => {
         || visible.bottom > culled.bottom + padding;
 };
 
+/** 手指还按着时只在快走出多渲染的范围时才裁剪，避免拖动途中整面墙反复重渲染。 */
+const DRAG_CULL_SLACK = 80;
+const needsUrgentRecull = (visible: Bounds, culled: Bounds | null) => {
+    if (!culled) return true;
+    const limit = BRAVAIS_OVERSCAN - DRAG_CULL_SLACK;
+    return visible.left < culled.left - limit
+        || visible.right > culled.right + limit
+        || visible.top < culled.top - limit
+        || visible.bottom > culled.bottom + limit;
+};
+
 export const useBravaisCamera = ({
     frameRef,
     renderFrame,
@@ -138,7 +148,12 @@ export const useBravaisCamera = ({
         syncPointerCamera();
         renderFrame();
         const visible = getVisibleWorldBounds(frameRef.current);
-        if (visible && (forceRecull || needsRecull(visible, boundsRef.current))) scheduleRecull();
+        if (!visible) return;
+        // 拖动、惯性、滚轮都算手势：靠近边缘就整墙提交会一帧卡一下。快露出空白才裁，手势结束再补一次。
+        const due = gesturingRef.current
+            ? needsUrgentRecull(visible, boundsRef.current)
+            : forceRecull || needsRecull(visible, boundsRef.current);
+        if (due) scheduleRecull();
     }, [frameRef, renderFrame, scheduleRecull, syncPointerCamera]);
 
     /**
@@ -199,6 +214,7 @@ export const useBravaisCamera = ({
     // B7 有限拼贴的相机范围：拖动中超出范围按阻尼走（弹性），惯性与滚轮硬钳制，松手后补间回范围里。
     const rangeRef = useRef<WallCameraRange | null>(null);
     const draggingRef = useRef(false);
+    const gesturingRef = useRef(false);
     const constrain = useCallback((center: WallViewCenter): WallViewCenter => {
         const range = rangeRef.current;
         if (!range) return center;
@@ -249,6 +265,10 @@ export const useBravaisCamera = ({
         cameraRef,
         getWorldBounds,
         viewportRef,
+        onGesture: active => {
+            gesturingRef.current = active;
+            if (!active) scheduleRecull();
+        },
     });
 
     useEffect(() => () => {
@@ -264,16 +284,21 @@ export const useBravaisCamera = ({
         onClickCapture,
         onPointerDown: (event: PointerEvent<HTMLDivElement>) => {
             draggingRef.current = true;
+            gesturingRef.current = true;
             panDown(event);
         },
         onPointerUp: (event: PointerEvent<HTMLDivElement>) => {
             panUp(event);
             draggingRef.current = false;
-            if (!animationRef.current) settle();
+            if (animationRef.current) return;
+            gesturingRef.current = false;
+            scheduleRecull();
+            settle();
         },
         onPointerCancel: (event: PointerEvent<HTMLDivElement>) => {
             panCancel(event);
             draggingRef.current = false;
+            gesturingRef.current = false;
             settle();
         },
     }), [didDragRef, onClickCapture, onPointerMove, panCancel, panDown, panUp, settle]);

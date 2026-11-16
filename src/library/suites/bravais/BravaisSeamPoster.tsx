@@ -2,6 +2,7 @@ import React, { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ListFilter, ListMusic, ListPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getSizedCoverUrl } from '../../../utils/coverUrl';
+import { BRAVAIS_ALBUM_COVER_PX } from './bravaisConstants';
 import type { BravaisItem, BravaisLayer } from './bravaisLayer';
 import type { BravaisSeamActions } from './BravaisSeamContent';
 import { BravaisSeamCollectionMenu, BravaisSeamCollectionMeta, BravaisSeamStatusLine } from './BravaisSeamCollection';
@@ -151,7 +152,7 @@ const BravaisSeamPoster: React.FC<{ layer: BravaisLayer; actions: BravaisSeamAct
                     与块里同一个地址，不多下载一张。 */}
                 {coverUrl && (
                     <div className="bravais-poster-backdrop" data-bravais-poster-backdrop>
-                        <img src={getSizedCoverUrl(coverUrl, 1024)} alt="" draggable={false} decoding="async" />
+                        <img src={getSizedCoverUrl(coverUrl, BRAVAIS_ALBUM_COVER_PX)} alt="" draggable={false} decoding="async" />
                     </div>
                 )}
                 {/* 装着定妆照的斜切色块：先画错开的虚影，再画块本身（照片 + 网点 + 白色描边）。 */}
@@ -159,7 +160,7 @@ const BravaisSeamPoster: React.FC<{ layer: BravaisLayer; actions: BravaisSeamAct
                 <div className="bravais-poster-shape" style={{ clipPath }}>
                     {coverUrl && (
                         <div className="bravais-poster-portrait" data-bravais-poster-portrait>
-                            <img src={getSizedCoverUrl(coverUrl, 1024)} alt="" draggable={false} decoding="async" />
+                            <img src={getSizedCoverUrl(coverUrl, BRAVAIS_ALBUM_COVER_PX)} alt="" draggable={false} decoding="async" />
                         </div>
                     )}
                 </div>

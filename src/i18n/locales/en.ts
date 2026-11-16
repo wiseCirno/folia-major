@@ -2224,15 +2224,8 @@ export default {
     "amll": "AMLLDB",
   },
   "onlineProviderName": {
-    "appleMusic": "Apple Music",
-    "netease": "NetEase",
-    "kugou": "Kugou",
-    "qq": "QQ Music",
-    "bodian": "Bodian",
-    "ytm": "YT Music",
-    "spotify": "Spotify",
-    "qishui": "Qishui",
-    "fnmusic": "fnOS",
+    "emby": "Emby",
+    "navidrome": "Navidrome",
   },
   "globalLyricOffset": {
     "title": "Global Timing Offset",
@@ -4961,6 +4954,16 @@ export default {
   },
   "emby": {
     "title": "Emby",
+    "enable": "Connect Emby",
+    "notConfigured": "Emby is not connected",
+    "clearSettings": "Clear",
+    "testConnection": "Test connection",
+    "testing": "Connecting...",
+    "connectionSuccess": "Connected",
+    "connectionFailed": "Connection failed",
+    "latestSongs": "Latest songs",
+    "latestAlbums": "Latest albums",
+    "suggestions": "Suggested for you",
     "settings": "Emby settings",
     "serverUrl": "Server URL",
     "serverUrlPlaceholder": "e.g. http://localhost:8096",
@@ -4974,7 +4977,7 @@ export default {
     "errorBadServerUrl": "The server URL must start with http:// or https://"
   },
   "navidrome": {
-    "title": "Navi",
+    "title": "Navidrome",
     "enable": "Connect Navidrome",
     "settings": "Navidrome Settings",
     "serverUrl": "Server URL",

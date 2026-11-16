@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import en from '@/i18n/locales/en';
 import zhCN from '@/i18n/locales/zh-CN';
 import zhTW from 'virtual:folia-locale-zh-TW';
-import ind from '@/i18n/locales/in';
-import vi from '@/i18n/locales/vi';
 import {
     countOverrideHits,
     toTaiwanRaw,
@@ -126,7 +124,7 @@ describe('traditional term overrides', () => {
 
 describe('locale language names', () => {
     // 语言下拉里的名字必须在每份 locale 里都存在，否则选择器会显示 key 本身。
-    it.each(Object.entries({ en, 'zh-CN': zhCN, 'zh-TW': zhTW, in: ind, vi }))(
+    it.each(Object.entries({ en, 'zh-CN': zhCN, 'zh-TW': zhTW }))(
         '%s 定义了全部语言名',
         (_name, bundle) => {
             const options = (bundle as Bundle).options as Record<string, unknown>;

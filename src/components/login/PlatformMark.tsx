@@ -1,7 +1,9 @@
 import React from 'react';
-import { omni } from '../../services/onlineMusic/omni';
-import type { OnlineProviderId, ProviderUser } from '../../types/onlineMusic';
-import { onAccentColor } from '../modal/settings/kit/kitTheme';
+import embyLogo from '@/assets/providers/emby.svg';
+import navidromeLogo from '@/assets/providers/navidrome.svg';
+import { omni } from '@/services/onlineMusic/omni.ts';
+import type { OnlineProviderId, ProviderUser } from '@/types/onlineMusic.ts';
+import { onAccentColor } from '@/components/modal/settings/kit/kitTheme.ts';
 import { resolvePlatformMark } from './resolvePlatformMark';
 
 // src/components/login/PlatformMark.tsx
@@ -10,6 +12,10 @@ import { resolvePlatformMark } from './resolvePlatformMark';
 // `--login-edge`（没有设就是卡片的颜色）。
 
 const EDGE = '0 0 0 2px var(--login-edge, var(--st-card))';
+
+const providerLogo = (providerId: OnlineProviderId): string | null => (
+    providerId === 'emby' ? embyLogo : providerId === 'navidrome' ? navidromeLogo : null
+);
 
 /** 一个平台的记号的字和颜色，连同画在这种颜色上的字的颜色。 */
 export const platformMarkOf = (providerId: OnlineProviderId, label?: string) => {
@@ -32,9 +38,11 @@ export const PlatformMark: React.FC<PlatformMarkProps> = ({ providerId, label, s
         <span
             aria-hidden
             className={`relative inline-grid shrink-0 place-items-center rounded-full font-bold leading-none ${className ?? ''}`}
-            style={{ width: size, height: size, background: mark.color, color: mark.onColor, fontSize: Math.round(size * 0.42) }}
+            style={{ width: size, height: size, background: providerLogo(providerId) ? 'transparent' : mark.color, color: mark.onColor, fontSize: Math.round(size * 0.42) }}
         >
-            {mark.letter}
+            {providerLogo(providerId)
+                ? <img src={providerLogo(providerId) ?? undefined} alt="" className="h-full w-full" />
+                : mark.letter}
             {ranOut && (
                 <i className="absolute -right-px -top-px h-2.5 w-2.5 rounded-full bg-[var(--st-warn)]" style={{ boxShadow: EDGE }} />
             )}

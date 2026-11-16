@@ -1,72 +1,108 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { LyricParserFactory } from '../../../../utils/lyrics/LyricParserFactory';
-import { getFromCacheWithMigration, getLocalSong, getLocalSongs, removeFromCache, saveToCache } from '../../../../services/db';
-import { loadCachedOrFetchCover } from '../../../../services/coverCache';
-import { addSongsToLocalPlaylist, buildCanonicalLocalSongIdIndex, createLocalPlaylist, getLocalPlaylists, setLocalSongFavorite } from '../../../../services/localPlaylistService';
-import { applyLocalLibraryEntityDisplay, buildLocalQueue, buildNavidromeQueue, buildUnifiedLocalSong, buildUnifiedNavidromeSong, resolveLocalSongMetadata } from '../../../../services/playbackAdapters';
-import { getPrefetchedData, prefetchNearbySongs } from '../../../../services/prefetchService';
-import { retireBlobUrl } from '../../../../services/playbackBlobUrls';
-import type { ThemeCacheSongKey } from '../../../../services/themeCache';
-import { hasRenderableLyrics } from '../../../../utils/appPlaybackHelpers';
+import type {Dispatch, MutableRefObject, SetStateAction} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {LyricParserFactory} from '@/utils/lyrics/LyricParserFactory.ts';
+import {getFromCacheWithMigration, getLocalSong, getLocalSongs, removeFromCache, saveToCache} from '@/services/db.ts';
+import {loadCachedOrFetchCover} from '@/services/coverCache.ts';
 import {
+    addSongsToLocalPlaylist,
+    buildCanonicalLocalSongIdIndex,
+    createLocalPlaylist,
+    getLocalPlaylists,
+    setLocalSongFavorite
+} from '@/services/localPlaylistService.ts';
+import {
+    applyLocalLibraryEntityDisplay,
+    buildLocalQueue,
+    buildNavidromeQueue,
+    buildUnifiedLocalSong,
+    buildUnifiedNavidromeSong,
+    resolveLocalSongMetadata
+} from '@/services/playbackAdapters.ts';
+import {getPrefetchedData, prefetchNearbySongs} from '@/services/prefetchService.ts';
+import {retireBlobUrl} from '@/services/playbackBlobUrls.ts';
+import type {ThemeCacheSongKey} from '@/services/themeCache.ts';
+import {hasRenderableLyrics} from '@/utils/lyrics/validity.ts';
+import {
+    getPlaybackSongKey,
+    getPlaybackSourceRef,
+    hasMixedPlaybackSources,
     isLocalPlaybackSong,
     isNavidromePlaybackSong,
     isSamePlaybackSong,
     isStagePlaybackSong,
-    getPlaybackSongKey,
-    hasMixedPlaybackSources,
     replacePlaybackSongInQueue,
     replacePlaybackSongWhereQueued,
     resolveNavidromePlaybackCarrier,
-    getPlaybackSourceRef,
-} from '../../../../utils/appPlaybackGuards';
-import { hydrateNavidromeLyricPayload, resolvePreferredNavidromeLyrics } from '../../../../utils/appNavidromeLyrics';
-import { migrateLyricDataRenderHints } from '../../../../utils/lyrics/renderHints';
-import { migrateMatchedLyricsCarrierRenderHints } from '../../../../utils/lyrics/storageMigration';
-import { autoMatchBestLyric } from '../../../../utils/lyrics/autoMatchBestLyric';
-import { getPlatformLyricSource } from '../../../../utils/lyrics/lyricSources';
-import { resolveExplicitFileTimedLyricFormat } from '../../../../utils/lyrics/formatDetection';
-import { applyUploadedLocalLyrics } from '../../../../utils/lyrics/localLyricsUpload';
-import { omni } from '../../../../services/onlineMusic/omni';
-import { onlineMutationFailureText } from '../../../../services/onlineMusic/failure/onlineMutationFailure';
-import { getProviderSongMetadata } from '../../../../services/onlineMusic/songMetadata';
-import { getSongCacheWithLegacyMigration } from '../../../../services/onlineMusic/resourceCache';
-import { getProviderCacheKey } from '../../../../services/onlineMusic/providerStorage';
-import { getNavidromeConfig, navidromeApi } from '../../../../services/navidromeService';
-import { notifyPlaybackFailed, untransformedLyrics } from '../../../../services/hostExtensionHooks';
-import { lyricsBeforeRules } from '../../../../utils/lyrics/lyricLineRules';
-import { wholeQueueWritesSoFar } from '../../../../services/wholeQueueWrites';
-import { PlayerState } from '../../../../types';
-import type { LyricData, LocalPlaylist, LocalSong, OnlineLyricsState, SongResult } from '../../../../types';
-import type { MediaId, ProviderCollection } from '../../../../types/onlineMusic';
-import type { PlaybackSnapshot, PlaybackNavigationOptions } from '../../../../types/appPlayback';
-import { getNavidromeMatchCacheKey, type NavidromeMatchData, type NavidromeSong } from '../../../../types/navidrome';
-import { applyQueueAddBehavior } from '../../../../utils/queueAddBehavior';
-import { loadOnlineLyricsState, resolveOnlineLyrics, saveOnlineLyricsState, getOnlineLyricsStateCacheKey } from '../../../../utils/onlineLyricsState';
-import { isSameLocalSongRecord } from '../../../../utils/localSongRecordEquality';
-import { getLocalCoverAssetUrl } from '../../../../services/localCoverAssetUrl';
-import { applyMatchedMetadata } from '../../../../services/localLibraryCatalogService';
-import { setLocalSongPureMusicMark } from '../../../../services/localSongMatchSelectionService';
-import { buildLocalSongLyricMatchContext } from '../../../../utils/lyrics/localSongMatchContext';
-import { getLocalLibraryCatalogSnapshot } from '../../../../services/localLibraryEntityRepository';
-import { setStatusMessage as setStatusMsg } from '../../../../stores/useStatusMessageStore';
-import { useLyricSettingsStore } from '../../../../stores/useLyricSettingsStore';
-import { setActiveLocalLyricsSource, setAudioSrc, setCachedCoverUrl, setCurrentLineIndex, setCurrentSong, setPlayerState, setPlayQueue, startLoadingToPlay } from '../../../../stores/usePlaybackStore';
-import { askedSongKeyRef, askForSong, keepSongsOfProvidersStanding, playsDroppedSoFar, providerDropsSoFar, replaceShownSong, showSong, startPlay } from '../currentSong';
-import { loadLocalSongAudio, loadLocalSongHifiSource, loadNavidromeSongAudio } from '../source/songAudioSource';
-import { beginHifiTrack, hifiRouteFor } from '../../../../services/hifi/hifiPlayback';
-import { supplyLyricsAfterEmptyLoad } from '../createLyricsSetter';
-import { useStableActionSurface } from '../../../../hooks/useStableCallbacks';
-import { useTranslation } from 'react-i18next';
-import { usePlaybackStore } from '../../../../stores/usePlaybackStore';
-import { useAudioSettingsStore } from '../../../../stores/useAudioSettingsStore';
-import { useLibraryStore } from '../../../../stores/useLibraryStore';
-import { setIsPanelOpen } from '../../../../stores/useAppViewStore';
-import { currentTime } from '../../../../stores/motionSignals';
-import { resolveLocalSongLyrics } from '../../../../utils/lyrics/localSongLyrics';
-import { detectLyricFileIssues } from '../../../../utils/lyrics/lyricFileIssues';
-import { createLikePresses } from '../../../../utils/likePresses';
+} from '@/utils/appPlaybackGuards.ts';
+import {hydrateNavidromeLyricPayload, resolvePreferredNavidromeLyrics} from '@/utils/appNavidromeLyrics.ts';
+import {migrateLyricDataRenderHints} from '@/utils/lyrics/renderHints.ts';
+import {migrateMatchedLyricsCarrierRenderHints} from '@/utils/lyrics/storageMigration.ts';
+import {autoMatchBestLyric} from '@/utils/lyrics/autoMatchBestLyric.ts';
+import {getPlatformLyricSource} from '@/utils/lyrics/lyricSources.ts';
+import {resolveExplicitFileTimedLyricFormat} from '@/utils/lyrics/formatDetection.ts';
+import {applyUploadedLocalLyrics} from '@/utils/lyrics/localLyricsUpload.ts';
+import {omni} from '@/services/onlineMusic/omni.ts';
+import {onlineMutationFailureText} from '@/services/onlineMusic/failure/onlineMutationFailure.ts';
+import {getProviderSongMetadata} from '@/services/onlineMusic/songMetadata.ts';
+import {getSongCacheWithLegacyMigration} from '@/services/onlineMusic/resourceCache.ts';
+import {getProviderCacheKey} from '@/services/onlineMusic/providerStorage.ts';
+import {getNavidromeConfig, navidromeApi} from '@/services/navidromeService.ts';
+import {notifyPlaybackFailed, untransformedLyrics} from '@/services/hostExtensionHooks.ts';
+import {lyricsBeforeRules} from '@/utils/lyrics/lyricLineRules.ts';
+import {wholeQueueWritesSoFar} from '@/services/wholeQueueWrites.ts';
+import type {LocalPlaylist, LocalSong, LyricData, OnlineLyricsState, SongResult} from '@/types.ts';
+import {PlayerState} from '@/types.ts';
+import type {MediaId, ProviderCollection} from '@/types/onlineMusic.ts';
+import type {PlaybackNavigationOptions, PlaybackSnapshot} from '@/types/appPlayback.ts';
+import {getNavidromeMatchCacheKey, type NavidromeMatchData, type NavidromeSong} from '@/types/navidrome.ts';
+import {applyQueueAddBehavior} from '@/utils/queueAddBehavior.ts';
+import {
+    getOnlineLyricsStateCacheKey,
+    loadOnlineLyricsState,
+    resolveOnlineLyrics,
+    saveOnlineLyricsState
+} from '@/utils/onlineLyricsState.ts';
+import {isSameLocalSongRecord} from '@/utils/localSongRecordEquality.ts';
+import {getLocalCoverAssetUrl} from '@/services/localCoverAssetUrl.ts';
+import {applyMatchedMetadata} from '@/services/localLibraryCatalogService.ts';
+import {setLocalSongPureMusicMark} from '@/services/localSongMatchSelectionService.ts';
+import {buildLocalSongLyricMatchContext} from '@/utils/lyrics/localSongMatchContext.ts';
+import {getLocalLibraryCatalogSnapshot} from '@/services/localLibraryEntityRepository.ts';
+import {setStatusMessage as setStatusMsg} from '../../../../stores/useStatusMessageStore';
+import {useLyricSettingsStore} from '@/stores/useLyricSettingsStore.ts';
+import {
+    setActiveLocalLyricsSource,
+    setAudioSrc,
+    setCachedCoverUrl,
+    setCurrentLineIndex,
+    setCurrentSong,
+    setPlayerState,
+    setPlayQueue,
+    startLoadingToPlay,
+    usePlaybackStore
+} from '@/stores/usePlaybackStore.ts';
+import {
+    askedSongKeyRef,
+    askForSong,
+    keepSongsOfProvidersStanding,
+    playsDroppedSoFar,
+    providerDropsSoFar,
+    replaceShownSong,
+    showSong,
+    startPlay
+} from '../currentSong';
+import {loadLocalSongAudio, loadLocalSongHifiSource, loadNavidromeSongAudio} from '../source/songAudioSource';
+import {beginHifiTrack, hifiRouteFor} from '@/services/hifi/hifiPlayback.ts';
+import {supplyLyricsAfterEmptyLoad} from '../createLyricsSetter';
+import {useStableActionSurface} from '@/hooks/useStableCallbacks.ts';
+import {useTranslation} from 'react-i18next';
+import {useAudioSettingsStore} from '@/stores/useAudioSettingsStore.ts';
+import {useLibraryStore} from '@/stores/useLibraryStore.ts';
+import {setIsPanelOpen} from '@/stores/useAppViewStore.ts';
+import {currentTime} from '@/stores/motionSignals.ts';
+import {resolveLocalSongLyrics} from '@/utils/lyrics/localSongLyrics.ts';
+import {detectLyricFileIssues} from '@/utils/lyrics/lyricFileIssues.ts';
+import {createLikePresses} from '@/utils/likePresses.ts';
 
 // src/components/app/playback/start/useLibraryPlaybackController.ts
 
@@ -113,7 +149,7 @@ const isStillPlaying = (song: SongResult): boolean => {
 
 /*
  * Whether a library play's landing leaves a whole-queue write standing (a mod's replaceQueue, its undo,
- * made while the play waited). playSong hands its own judgement in (`queueRewritten`); a play called here
+ * made while the play waited). playSong hands its own judgment in (`queueRewritten`); a play called here
  * directly with a unified queue (a reload of the song after its lyrics changed, which passes the store's
  * queue) counts the writes from its start; one without (a click in the local library) is a list of its own.
  */
@@ -581,8 +617,7 @@ export function useLibraryPlaybackController({
             return shownSource;
         }
 
-        const onlineSong = currentSong;
-        const resolved = await resolveOnlineSongLyricsState(onlineSong, shownSource);
+        const resolved = await resolveOnlineSongLyricsState(currentSong, shownSource);
         return resolved.lyrics;
     }, [currentSong, lyrics, resolveLocalSongRecord, resolveOnlineSongLyricsState]);
 

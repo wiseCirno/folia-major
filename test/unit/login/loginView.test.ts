@@ -7,7 +7,6 @@ import { accountPictureSrc } from '@/components/login/PlatformMark';
 import { orderRows, pillNameUnfolds, pillProvider, pillSeenNext, rowStatus, type PillSeen } from '@/components/login/platformRows';
 import { resolvePlatformMark } from '@/components/login/resolvePlatformMark';
 import en from '@/i18n/locales/en';
-import id from '@/i18n/locales/in';
 import zh from '@/i18n/locales/zh-CN';
 import { retryOpensAt, retryWaitEndsAt, secondsLeft } from '@/library/core/account/accountRules';
 import { omni } from '@/services/onlineMusic/omni';
@@ -320,7 +319,7 @@ describe('the texts the window can ask for', () => {
     const has = (texts: unknown, key: string): boolean => (
         typeof key.split('.').reduce<unknown>((at, part) => (at as Record<string, unknown> | undefined)?.[part], texts) === 'string'
     );
-    const missing = (keys: string[]) => keys.flatMap(key => [['zh-CN', zh], ['en', en], ['in', id]].filter(([, texts]) => !has(texts, key)).map(([name]) => `${key} in ${name}`));
+    const missing = (keys: string[]) => keys.flatMap(key => [['zh-CN', zh], ['en', en]].filter(([, texts]) => !has(texts, key)).map(([name]) => `${key} in ${name}`));
 
     it('has a headline for each of the 19 cases, a name for each kind and each step, in the three languages', () => {
         expect(Object.keys(LOGIN_CASE_TEXTS).sort()).toEqual([...LOGIN_CASE_IDS].sort());
@@ -335,7 +334,7 @@ describe('the texts the window can ask for', () => {
         ];
         expect(missing(keys)).toEqual([]);
         // One state, one word: the row's spoken state and the app's message say the same.
-        for (const texts of [zh, en, id]) expect(texts.login.rowRanOut).toBe(texts.login.signInRanOut);
+        for (const texts of [zh, en]) expect(texts.login.rowRanOut).toBe(texts.login.signInRanOut);
     });
 
     it('has every title, note and second line a platform declares, in the three languages', () => {
@@ -343,19 +342,14 @@ describe('the texts the window can ask for', () => {
             const texts = omni.getLoginTexts(provider.id);
             return texts ? [texts.title, texts.note, ...Object.values(texts.caseNotes ?? {})] : [];
         });
-        expect(keys.length).toBeGreaterThanOrEqual(12);
+        expect(keys.length).toBeGreaterThanOrEqual(4);
         expect(missing(keys)).toEqual([]);
     });
 
     it('declares a second line of its own only where the sentence names that platform\'s own thing', () => {
-        const notes = Object.fromEntries(listOnlineMusicProviders().map(provider => [provider.id, omni.getLoginTexts(provider.id)?.caseNotes ?? null]));
-        expect(notes).toEqual({
-            netease: null, kugou: null, bodian: null, fnmusic: null, qishui: null, appleMusic: null,
-            // 扫错 App 的那一句按后端有没有 QQ 音乐 App 扫码说（这里还没问到后端）。
-            qq: { 'local-service-unavailable': 'home.loginCaseQqRestart', 'wrong-scan-app': 'home.loginCaseQqWrongScanAppMobileOnly', 'device-limit': 'home.loginCaseQqDeviceLimit' },
-            ytm: { 'browser-unfinished': 'home.loginCaseYtmUnfinished', 'no-browser': 'home.loginNoBrowserYtm' },
-            spotify: { 'browser-unfinished': 'home.loginCaseSpotifyUnfinished', 'not-authorized': 'home.loginCaseSpotifyDenied', 'cannot-listen': 'home.loginCaseSpotifyPort' },
-        });
+        const providers = listOnlineMusicProviders();
+        const notes = Object.fromEntries(providers.map(provider => [provider.id, omni.getLoginTexts(provider.id)?.caseNotes ?? null]));
+        expect(notes).toEqual(Object.fromEntries(providers.map(provider => [provider.id, null])));
     });
 });
 

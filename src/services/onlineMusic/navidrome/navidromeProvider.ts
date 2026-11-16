@@ -157,7 +157,7 @@ const readArtistSongs = async (config: NavidromeConfig, id: string): Promise<Sub
 export const navidromeProvider: OnlineMusicProvider = {
     id: PROVIDER_ID,
     displayName: 'Navidrome',
-    shortName: 'Navi',
+    shortName: 'Navidrome',
     shortNameKey: 'navidrome.title',
     mark: { letter: 'N', color: '#3d7eea' },
     getAvailability: () => ({ configured: Boolean(getNavidromeConfig()?.serverUrl && getNavidromeConfig()?.username) }),

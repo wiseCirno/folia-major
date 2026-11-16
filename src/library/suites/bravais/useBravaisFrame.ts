@@ -89,8 +89,19 @@ export const useBravaisFrame = (refs: BravaisFrameRefs) => {
             liftY: state.tiltLiftY,
         });
         const { left, right, seam, seamTrack, seamContent, tab, hint } = refs;
-        if (left.current) left.current.style.transform = withTilt(formatWorldTransform(frame.left.x, frame.left.y, frame.scale), frame.tilt);
-        if (right.current) right.current.style.transform = withTilt(formatWorldTransform(frame.right.x, frame.right.y, frame.scale), frame.tilt);
+        const tilted = Math.abs(frame.tilt.deg) >= 0.001;
+        for (const node of [left.current, right.current]) {
+            if (!node) continue;
+            node.style.transform = withTilt(formatWorldTransform(
+                node === left.current ? frame.left.x : frame.right.x,
+                node === left.current ? frame.left.y : frame.right.y,
+                frame.scale,
+            ), frame.tilt);
+            if (tilted !== (node.dataset.bravaisTilted !== undefined)) {
+                if (tilted) node.dataset.bravaisTilted = '';
+                else delete node.dataset.bravaisTilted;
+            }
+        }
         const seamElement = seam.current;
         if (seamElement) {
             // 另一个方向上的尺寸交还给样式表（竖的缝满高、横的满宽；样式按缝上的 data-bravais-seam-axis，见 BravaisSeam）。

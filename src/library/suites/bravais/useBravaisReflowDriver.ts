@@ -105,10 +105,21 @@ export const splitStaleTracks = (
     return { live, settled };
 };
 
+/** 宽高只在终点写一次。中间帧用 scale，避免每帧改布局。 */
+const writeTileMotion = (tile: HTMLElement, rect: PlateRect, dest: PlateRect, done: boolean) => {
+    const width = `${dest.width}px`;
+    const height = `${dest.height}px`;
+    if (tile.style.width !== width) tile.style.width = width;
+    if (tile.style.height !== height) tile.style.height = height;
+    const scaled = !done && (rect.width !== dest.width || rect.height !== dest.height);
+    tile.style.transformOrigin = scaled ? '0 0' : '';
+    tile.style.transform = scaled
+        ? `translate3d(${rect.x}px, ${rect.y}px, 0) scale(${rect.width / dest.width}, ${rect.height / dest.height})`
+        : `translate3d(${rect.x}px, ${rect.y}px, 0)`;
+};
+
 const writeTileRect = (tile: HTMLElement, rect: PlateRect) => {
-    tile.style.transform = `translate3d(${rect.x}px, ${rect.y}px, 0)`;
-    tile.style.width = `${rect.width}px`;
-    tile.style.height = `${rect.height}px`;
+    writeTileMotion(tile, rect, rect, true);
 };
 
 const findPlate = (plates: PlateBlockSet, blockKey: string): PlateBlock | undefined => (
@@ -164,7 +175,7 @@ export const useBravaisReflowDriver = ({
             const rect = sampleReflowTrack(track, now);
             const tile = field.querySelector<HTMLElement>(`[data-bravais-slot="${key}"]`);
             if (tile) {
-                writeTileRect(tile, rect);
+                writeTileMotion(tile, rect, track.to, done);
                 if (done) tile.removeAttribute(BRAVAIS_REFLOWING_ATTRIBUTE);
                 else tile.setAttribute(BRAVAIS_REFLOWING_ATTRIBUTE, '');
             }

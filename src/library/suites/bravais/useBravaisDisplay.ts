@@ -74,6 +74,8 @@ import { isSourceOrigin, layerMatchesNavigation, resolveShiftKind, type BravaisS
 
 /** 翻牌只排视口外扩这么多（世界单位）以内的磁贴。 */
 const FLIP_OVERSCAN = 160;
+/** 一次转场里真正做动画的磁贴。再多就一起换内容，避免几十张封面同时翻。 */
+const BRAVAIS_ANIMATED_TILES = 24;
 /** 移除第一段（翻成墙面）放完之后再多等这么久才换上新数据。 */
 const REMOVAL_SETTLE_MS = 40;
 
@@ -270,6 +272,7 @@ export const useBravaisDisplay = (layer: BravaisLayer | null, controls: BravaisD
             origin,
             visible: ranges.visible,
             metrics: BRAVAIS_METRICS,
+            maxTiles: BRAVAIS_ANIMATED_TILES,
         });
         return { steps: toFlipSteps(flipTokenRef.current, plan), durationMs: plan.durationMs };
     }, []);
@@ -285,6 +288,7 @@ export const useBravaisDisplay = (layer: BravaisLayer | null, controls: BravaisD
             viewport: ranges.viewport,
             visible: ranges.visible,
             metrics: BRAVAIS_METRICS,
+            maxTiles: BRAVAIS_ANIMATED_TILES,
         });
         return { steps: toWaveSteps(flipTokenRef.current, plan), durationMs: plan.durationMs };
     }, []);

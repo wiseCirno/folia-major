@@ -1,9 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAudioSettingsStore } from '../../../../stores/useAudioSettingsStore';
-import { usePlayerChromeSettingsStore } from '../../../../stores/usePlayerChromeSettingsStore';
-import { useStageSettingsStore } from '../../../../stores/useStageSettingsStore';
+import { usePlayerChromeSettingsStore } from '@/stores/usePlayerChromeSettingsStore.ts';
+import { useStageSettingsStore } from '@/stores/useStageSettingsStore.ts';
 import { Button, CopyValue, Group, Reveal, Row, Status, Toggle, Value, type SettingsOptionDef } from '../kit';
+import { readDeploymentLock } from '@/services/onlineMusic/deploymentLock.ts';
+import EmbyRows from './integration/EmbyRows';
 import NavidromeRows from './integration/NavidromeRows';
 import { O, SERVICES, STREAMING } from './integration/options';
 import { DesktopStageRows, WebStageRows } from './integration/StageModeRows';
@@ -33,7 +34,8 @@ const IntegrationPage: React.FC = () => {
     return (
         <>
             <Group def={SERVICES}>
-                <NavidromeRows />
+                {readDeploymentLock()?.platformId !== 'emby' && <NavidromeRows />}
+                <EmbyRows />
                 <SyncServerRows />
                 {isElectron && (
                     <>

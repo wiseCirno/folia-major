@@ -1,6 +1,6 @@
-import type { EmbySession } from './embySession';
-import { rememberLockedEmbyUser } from './embySession';
-import { embySubtitleLrcPath, textSubtitleTarget } from './embyLyrics';
+import type {EmbySession} from './embySession';
+import {rememberLockedEmbyUser} from './embySession';
+import {embySubtitleLrcPath, textSubtitleTarget} from './embyLyrics';
 
 // src/services/onlineMusic/emby/embyApi.ts
 // Browser calls to one Emby server. Paths follow Emby's own item, audio, and subtitle routes.
@@ -9,12 +9,30 @@ export interface EmbyItem {
     Id: string;
     Name: string;
     Type?: string;
+    CollectionType?: string;
+    ChildCount?: number;
     RunTimeTicks?: number;
     Artists?: string[];
     Album?: string;
     AlbumId?: string;
+    AlbumArtist?: string;
+    AlbumPrimaryImageTag?: string;
+    ImageTags?: { Primary?: string };
+    PrimaryImageItemId?: string;
+    PrimaryImageTag?: string;
+    BackdropImageTags?: string[];
     UserData?: { IsFavorite?: boolean };
 }
+
+/** A library root, such as a movie or music folder. Those are not albums or songs. */
+export const isEmbyLibraryRoot = (item: Pick<EmbyItem, 'Type' | 'CollectionType'>): boolean => (
+    Boolean(item.CollectionType) || item.Type === 'CollectionFolder' || item.Type === 'UserView'
+);
+
+/** A library whose collection type is music. Movies and shows are not part of the player. */
+export const isEmbyMusicLibrary = (item: Pick<EmbyItem, 'CollectionType'>): boolean => (
+    item.CollectionType?.toLowerCase() === 'music'
+);
 
 interface EmbyItemsResult {
     Items?: EmbyItem[];
@@ -34,11 +52,10 @@ const authHeader = (token?: string): HeadersInit => ({
 });
 
 const request = async (session: Pick<EmbySession, 'serverUrl' | 'accessToken'>, path: string, init?: RequestInit): Promise<Response> => {
-    const response = await fetch(`${session.serverUrl}${path}`, {
+    return await fetch(`${session.serverUrl}${path}`, {
         ...init,
-        headers: { ...authHeader(session.accessToken), ...init?.headers },
+        headers: {...authHeader(session.accessToken), ...init?.headers},
     });
-    return response;
 };
 
 export const authenticateEmby = async (
@@ -81,6 +98,106 @@ export const ensureEmbyUser = async (session: EmbySession): Promise<EmbySession>
     return rememberUser(session, user);
 };
 
+export const listEmbyMusicLibraries = async (session: EmbySession): Promise<EmbyItem[]> => {
+    const response = await request(session, `/Users/${encodeURIComponent(session.userId)}/Views`);
+    if (!response.ok) throw new Error('EMBY_NETWORK');
+    const body = await response.json() as EmbyItemsResult;
+    return (body.Items ?? []).filter(item => item.Id && item.Name && isEmbyMusicLibrary(item));
+};
+
+export const listEmbyLibraryAudio = async (
+    session: EmbySession,
+    libraryId: string,
+    limit: number,
+    startIndex: number,
+): Promise<{ items: EmbyItem[]; total: number }> => {
+    const params = new URLSearchParams({
+        ParentId: libraryId,
+        IncludeItemTypes: 'Audio',
+        Recursive: 'true',
+        Limit: String(limit),
+        StartIndex: String(startIndex),
+        Fields: 'UserData',
+    });
+    const response = await request(session, `/Users/${encodeURIComponent(session.userId)}/Items?${params.toString()}`);
+    if (!response.ok) throw new Error('EMBY_NETWORK');
+    const body = await response.json() as EmbyItemsResult;
+    return { items: body.Items ?? [], total: body.TotalRecordCount ?? body.Items?.length ?? 0 };
+};
+
+const readItemList = async (response: Response): Promise<{ items: EmbyItem[]; total: number }> => {
+    const body = await response.json() as EmbyItemsResult | EmbyItem[];
+    if (Array.isArray(body)) return { items: body, total: body.length };
+    return { items: body.Items ?? [], total: body.TotalRecordCount ?? body.Items?.length ?? 0 };
+};
+
+const userItems = async (
+    session: EmbySession,
+    path: string,
+    params: Record<string, string>,
+): Promise<{ items: EmbyItem[]; total: number }> => {
+    const query = new URLSearchParams(params);
+    const response = await request(session, `/Users/${encodeURIComponent(session.userId)}${path}?${query.toString()}`);
+    if (!response.ok) throw new Error('EMBY_NETWORK');
+    return readItemList(response);
+};
+
+const IMAGE_FIELDS = 'ImageTags,PrimaryImageItemId,PrimaryImageTag,AlbumPrimaryImageTag,BackdropImageTags,UserData';
+
+const withinMusicLibraries = async (
+    session: EmbySession,
+    path: string,
+    includeItemTypes: string,
+    limit: number,
+    extra: Record<string, string> = {},
+): Promise<{ items: EmbyItem[]; total: number }> => {
+    const libraries = await listEmbyMusicLibraries(session);
+    const pages = await Promise.all(libraries.map(library => userItems(session, path, {
+        IncludeItemTypes: includeItemTypes,
+        ParentId: library.Id,
+        Recursive: 'true',
+        Limit: String(limit),
+        Fields: IMAGE_FIELDS,
+        ...extra,
+    })));
+    const items = pages.flatMap(page => page.items).filter(item => !isEmbyLibraryRoot(item));
+    return { items: items.slice(0, limit), total: items.length };
+};
+
+export const listEmbyAlbums = (session: EmbySession, limit: number, startIndex: number) => withinMusicLibraries(
+    session,
+    '/Items',
+    'MusicAlbum',
+    limit,
+    { StartIndex: String(startIndex) },
+);
+
+export const listEmbyAlbumAudio = (session: EmbySession, albumId: string, limit: number, startIndex: number) => userItems(session, '/Items', {
+    ParentId: albumId,
+    IncludeItemTypes: 'Audio',
+    Limit: String(limit),
+    StartIndex: String(startIndex),
+    Fields: IMAGE_FIELDS,
+});
+
+export const listEmbyLatest = (session: EmbySession, includeItemTypes: string, limit: number) => withinMusicLibraries(
+    session,
+    '/Items/Latest',
+    includeItemTypes,
+    limit,
+);
+
+export const listEmbySuggestions = async (session: EmbySession, includeItemTypes: string, limit: number) => {
+    const result = await userItems(session, '/Suggestions', {
+        IncludeItemTypes: includeItemTypes,
+        Recursive: 'true',
+        Limit: String(limit),
+        Fields: IMAGE_FIELDS,
+    });
+    const items = result.items.filter(item => !isEmbyLibraryRoot(item) && (item.Type === 'Audio' || item.Type === 'MusicAlbum'));
+    return { items, total: items.length };
+};
+
 export const searchEmbyAudio = async (
     session: EmbySession,
     term: string,
@@ -113,9 +230,26 @@ export const embyStreamUrl = (session: EmbySession, itemId: string): string => {
     return `${session.serverUrl}/Audio/${encodeURIComponent(itemId)}/stream?${params.toString()}`;
 };
 
-export const embyImageUrl = (session: EmbySession, itemId: string): string => {
+const embyPictureUrl = (session: EmbySession, imageId: string, imageType: 'Primary' | 'Backdrop', tag?: string): string => {
     const params = new URLSearchParams({ maxWidth: '600', api_key: session.accessToken });
-    return `${session.serverUrl}/Items/${encodeURIComponent(itemId)}/Images/Primary?${params.toString()}`;
+    if (tag) params.set('tag', tag);
+    return `${session.serverUrl}/Items/${encodeURIComponent(imageId)}/Images/${imageType}?${params.toString()}`;
+};
+
+/**
+ * The picture for one song or album. A tag is used when the list included one.
+ * Latest and suggestion lists omit the tag, so a song or album still uses its primary image.
+ * Library folders are not given a URL here: requesting one that does not exist stays a gray card.
+ */
+export const embyImageUrl = (session: EmbySession, item: Pick<EmbyItem, 'Id' | 'Type' | 'AlbumId' | 'ImageTags' | 'PrimaryImageItemId' | 'PrimaryImageTag' | 'AlbumPrimaryImageTag' | 'BackdropImageTags'>): string | undefined => {
+    const primaryTag = item.ImageTags?.Primary || item.PrimaryImageTag;
+    const albumTag = item.AlbumPrimaryImageTag;
+    const backdropTag = item.BackdropImageTags?.[0];
+    if (primaryTag) return embyPictureUrl(session, item.PrimaryImageItemId || item.Id, 'Primary', primaryTag);
+    if (albumTag && item.AlbumId) return embyPictureUrl(session, item.AlbumId, 'Primary', albumTag);
+    if (backdropTag) return embyPictureUrl(session, item.Id, 'Backdrop', backdropTag);
+    const fallbackId = item.Type === 'Audio' ? (item.AlbumId || item.Id) : item.Type === 'MusicAlbum' ? item.Id : '';
+    return fallbackId ? embyPictureUrl(session, fallbackId, 'Primary') : undefined;
 };
 
 export const readEmbyLyricText = async (session: EmbySession, itemId: string): Promise<string | null> => {

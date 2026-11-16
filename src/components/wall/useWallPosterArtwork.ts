@@ -52,29 +52,58 @@ const variantUrl = (cover: string, step: number, keepOriginal = false): string =
 
 // Waits for a decoded frame rather than a load event: the swap that follows is then a repaint of
 // something already rasterized, instead of a decode landing in the middle of the expansion spring.
+const DECODE_LIMIT = 2;
+let activeDecodes = 0;
+const decodeWaiters: Array<() => void> = [];
+
+const acquireDecodeSlot = (): Promise<void> => new Promise(resolve => {
+    if (activeDecodes < DECODE_LIMIT) {
+        activeDecodes += 1;
+        resolve();
+        return;
+    }
+    decodeWaiters.push(() => {
+        activeDecodes += 1;
+        resolve();
+    });
+});
+
+const releaseDecodeSlot = (): void => {
+    activeDecodes = Math.max(0, activeDecodes - 1);
+    decodeWaiters.shift()?.();
+};
+
+const wallIsReflowing = (): boolean => (
+    typeof document !== 'undefined' && document.querySelector('[data-bravais-reflowing]') !== null
+);
+
 const decodeVariant = (url: string): Promise<boolean> => {
     if (!url || typeof Image === 'undefined' || failedVariants.has(url)) return Promise.resolve(false);
     const pending = decodingVariants.get(url);
     if (pending) return pending;
 
-    const image = new Image();
-    image.decoding = 'async';
-    image.src = url;
-    const request = (typeof image.decode === 'function'
-        ? image.decode()
-        : new Promise<void>((resolve, reject) => {
-            image.onload = () => resolve();
-            image.onerror = () => reject(new Error(`Cover variant failed: ${url}`));
-        }))
-        .then(() => {
-            remember(decodedVariants, url);
-            return true;
-        })
-        .catch(() => {
-            remember(failedVariants, url);
-            return false;
-        })
-        .finally(() => { decodingVariants.delete(url); });
+    const request = acquireDecodeSlot().then(() => {
+        const image = new Image();
+        image.decoding = 'async';
+        image.src = url;
+        return (typeof image.decode === 'function'
+            ? image.decode()
+            : new Promise<void>((resolve, reject) => {
+                image.onload = () => resolve();
+                image.onerror = () => reject(new Error(`Cover variant failed: ${url}`));
+            }))
+            .then(() => {
+                remember(decodedVariants, url);
+                return true;
+            })
+            .catch(() => {
+                remember(failedVariants, url);
+                return false;
+            });
+    }).finally(() => {
+        decodingVariants.delete(url);
+        releaseDecodeSlot();
+    });
     decodingVariants.set(url, request);
     return request;
 };
@@ -142,10 +171,22 @@ export const useWallPosterArtwork = (
             return;
         }
         let cancelled = false;
-        void decodeVariant(url).then(decoded => {
-            if (decoded && !cancelled) upgrade();
-        });
-        return () => { cancelled = true; };
+        let timer = 0;
+        const start = () => {
+            if (cancelled) return;
+            if (wallIsReflowing()) {
+                timer = window.setTimeout(start, 80);
+                return;
+            }
+            void decodeVariant(url).then(decoded => {
+                if (decoded && !cancelled) upgrade();
+            });
+        };
+        start();
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timer);
+        };
     }, [current, source, targetStep, keepOriginal]);
 
     return current.url;

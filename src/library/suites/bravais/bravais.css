@@ -10,6 +10,14 @@
     --bravais-chrome-shadow: rgb(0 0 0 / 55%);
     /* 信息条只有投影，不描边（原来还有一圈 1px 的淡色细框，用户 2026-11-05 要求去掉）。 */
     --bravais-seam-shadow: 0 24px 64px rgb(0 0 0 / 42%);
+    /* 下面这些由磁贴或舞台在运行时按尺寸和角度改写。这里给出初值，样式检查才认得出这些属性。 */
+    --bravais-pop-x: 1;
+    --bravais-pop-y: 1;
+    --bravais-focus-reveal-duration: 0ms;
+    --bravais-focus-reveal-delay: 0ms;
+    --bravais-focus-reveal-rise: 0px;
+    --bravais-seam-tilt-top: 0px;
+    --bravais-seam-tilt-bottom: 0px;
 }
 
 .bravais-root.is-daylight {
@@ -28,6 +36,11 @@
 .bravais-tile:hover { z-index: 3; }
 .bravais-tile.is-focused { z-index: 4; }
 .bravais-tile.is-expanded { z-index: 20; }
+
+/* 让位时只动 transform。没有合成层的话，每一帧都会把磁贴上的封面重画一遍。 */
+.bravais-tile[data-bravais-reflowing] {
+    will-change: transform;
+}
 
 .bravais-tile-face {
     inset: 0;

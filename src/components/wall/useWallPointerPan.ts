@@ -28,11 +28,13 @@ type WallPointerPanOptions = {
     cameraRef: MutableRefObject<LatticeCamera>;
     getWorldBounds: (camera: LatticeCamera, viewport: { width: number; height: number }) => Bounds;
     viewportRef: MutableRefObject<{ width: number; height: number }>;
+    /** 滚轮和松手惯性期间为真。宿主用它推迟整墙重裁，手势结束再补一次。 */
+    onGesture?: (active: boolean) => void;
 };
 
 export const useWallPointerPan = ({
     applyCamera, animationRef, stopPan, containerRef, reducedMotion, overscan,
-    bounds, cameraRef, getWorldBounds, viewportRef,
+    bounds, cameraRef, getWorldBounds, viewportRef, onGesture,
 }: WallPointerPanOptions) => {
     const boundsRef = useRef(bounds);
     boundsRef.current = bounds;
@@ -45,6 +47,8 @@ export const useWallPointerPan = ({
         vy: number;
         dragged: boolean;
     } | null>(null);
+    const onGestureRef = useRef(onGesture);
+    onGestureRef.current = onGesture;
     // Read by the poster click handler so a drag that ends on a card does not open it.
     const didDragRef = useRef(false);
 
@@ -116,6 +120,10 @@ export const useWallPointerPan = ({
             type: 'inertia', velocity, power: WALL_PAN_INERTIA.power, timeConstant: WALL_PAN_INERTIA.timeConstant,
             restDelta: WALL_PAN_INERTIA.restDelta,
             onUpdate: distance => updateCamera(from.x + distance * pointer.vx / speed, from.y + distance * pointer.vy / speed),
+            onComplete: () => {
+                animationRef.current = null;
+                if (!pointerRef.current) onGestureRef.current?.(false);
+            },
         });
     }, [animationRef, cameraRef, reducedMotion, updateCamera]);
 
@@ -146,12 +154,18 @@ export const useWallPointerPan = ({
         const classify = createWallWheelClassifier();
         // 交接（翻牌到另一面墙）期间不接滚轮，正在平滑的也停下：交接要按此刻的相机量磁贴位置。
         const inHandoff = () => Boolean(container.closest('[data-wall-handoff]'));
+        const gestureIdle = () => !wheelRef.current && !latch && !pointerRef.current;
+        const endWheelGesture = () => {
+            if (!gestureIdle()) return;
+            onGestureRef.current?.(false);
+        };
         const stopWheel = () => {
             const wheel = wheelRef.current;
             if (!wheel) return;
             if (wheel.frame !== null) cancelAnimationFrame(wheel.frame);
             wheelRef.current = null;
             if (animationRef.current === wheel.handle) animationRef.current = null;
+            endWheelGesture();
         };
         const tick = (now: number) => {
             const wheel = wheelRef.current;
@@ -190,6 +204,7 @@ export const useWallPointerPan = ({
             latch = null;
             window.removeEventListener('wheel', onLatchedWheel, { capture: true });
             window.removeEventListener('pointermove', onLatchMove, true);
+            endWheelGesture();
         };
         const holdLatch = (event: WheelEvent) => {
             if (!latch) {
@@ -211,6 +226,7 @@ export const useWallPointerPan = ({
         const onWheel = (event: WheelEvent) => {
             if (event.ctrlKey || event.metaKey) return;
             event.preventDefault();
+            onGestureRef.current?.(true);
             holdLatch(event);
             if (pointerRef.current || inHandoff()) return;
             const source = classify(event);

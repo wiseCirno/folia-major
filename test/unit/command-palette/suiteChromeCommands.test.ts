@@ -12,7 +12,6 @@ import type { LibrarySuiteChromeHandle } from '../../../src/library/core/suite/s
 import { installLibrarySuiteChromeCommands } from '../../../src/library/app/installLibrarySuiteChromeCommands';
 import en from '../../../src/i18n/locales/en';
 import zhCN from '../../../src/i18n/locales/zh-CN';
-import id from '../../../src/i18n/locales/in';
 import { findKeywordOffenders, findUntranslatedCommands, withCommandText, type CommandText } from './commandContractChecks';
 
 // test/unit/command-palette/suiteChromeCommands.test.ts
@@ -224,7 +223,6 @@ describe('command contract over a fixture suite\'s chrome actions', () => {
     const LOCALES = {
         en: withCommandText(en, TEXT.en),
         'zh-CN': withCommandText(zhCN, TEXT['zh-CN']),
-        in: withCommandText(id, TEXT.in),
     };
 
     it('enumerates the declared actions and finds them translated in all three locales', () => {

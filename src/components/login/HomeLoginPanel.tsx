@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LibraryAccountController } from '../../library/core/account/account.contract';
-import { useLibraryAccountProviders } from '../../library/core/account/useLibraryAccount';
-import { providerDisplayName } from '../../i18n/providerName';
+import type { LibraryAccountController } from '@/library/core/account/account.contract.ts';
+import { useLibraryAccountProviders } from '@/library/core/account/useLibraryAccount.ts';
+import { providerDisplayName } from '@/i18n/providerName.ts';
 import { settingsTokens, useSettingsKitTheme } from '../modal/settings/kit/kitTheme';
 import { kitMotionTokens, useKitReducedMotion } from '../modal/settings/kit/motion';
-import { isDeploymentLocked } from '../../services/onlineMusic/deploymentLock';
+import { isDeploymentLocked } from '@/services/onlineMusic/deploymentLock.ts';
 import { openLoginWindow } from './loginWindowStore';
 import { PlatformMark } from './PlatformMark';
 import { orderRows, rowStatus } from './platformRows';
