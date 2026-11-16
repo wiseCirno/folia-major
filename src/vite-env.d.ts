@@ -25,6 +25,11 @@ declare global {
     readonly VITE_FOLIA_ONLINE_API_KEY?: string;
     readonly VITE_FOLIA_ONLINE_USERNAME?: string;
     readonly VITE_FOLIA_ONLINE_PASSWORD?: string;
+    readonly FOLIA_ONLINE_PLATFORM?: string;
+    readonly FOLIA_ONLINE_SERVER_URL?: string;
+    readonly FOLIA_ONLINE_API_KEY?: string;
+    readonly FOLIA_ONLINE_USERNAME?: string;
+    readonly FOLIA_ONLINE_PASSWORD?: string;
   }
 
   interface Window {

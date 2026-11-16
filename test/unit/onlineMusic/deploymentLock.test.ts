@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { parseDeploymentLock } from '../../../src/services/onlineMusic/deploymentLock';
-import { isEmbyMusicLibrary } from '../../../src/services/onlineMusic/emby/embyApi';
-import { textSubtitleTarget } from '../../../src/services/onlineMusic/emby/embyLyrics';
+import { parseDeploymentLock } from '@/services/onlineMusic/deploymentLock.ts';
+import { isEmbyMusicLibrary } from '@/services/onlineMusic/emby/embyApi.ts';
+import { textSubtitleTarget } from '@/services/onlineMusic/emby/embyLyrics.ts';
 
 describe('parseDeploymentLock', () => {
     it('requires a platform, an http server, and either an API key or a username and password', () => {
@@ -29,6 +29,11 @@ describe('parseDeploymentLock', () => {
             VITE_FOLIA_ONLINE_USERNAME: 'ada',
             VITE_FOLIA_ONLINE_PASSWORD: 'secret',
         })).toMatchObject({ platformId: 'navidrome', username: 'ada', password: 'secret', apiKey: '' });
+        expect(parseDeploymentLock({
+            FOLIA_ONLINE_PLATFORM: 'emby',
+            FOLIA_ONLINE_SERVER_URL: 'https://emby.example.com',
+            FOLIA_ONLINE_API_KEY: 'key',
+        })).toMatchObject({ platformId: 'emby', serverUrl: 'https://emby.example.com', apiKey: 'key' });
     });
 });
 
