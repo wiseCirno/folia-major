@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DEFAULT_ONLINE_PROVIDER_ID } from '../types/onlineMusic';
+import { readDeploymentLock } from '../services/onlineMusic/deploymentLock';
 import type { MediaId, OnlineProviderId, ProviderCollection, ProviderUser } from '../types/onlineMusic';
 
 // src/stores/useOnlineProviderAccountStore.ts
@@ -32,6 +33,8 @@ type OnlineProviderAccountStore = {
 const ACTIVE_PROVIDER_KEY = 'active_online_provider_id';
 
 const getInitialProviderId = (): OnlineProviderId => {
+    const locked = readDeploymentLock();
+    if (locked) return locked.platformId;
     if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') return DEFAULT_ONLINE_PROVIDER_ID;
     return localStorage.getItem(ACTIVE_PROVIDER_KEY) || DEFAULT_ONLINE_PROVIDER_ID;
 };

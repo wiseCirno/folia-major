@@ -100,7 +100,7 @@ export const embyProvider: OnlineMusicProvider = {
     shortName: 'Emby',
     shortNameKey: 'emby.title',
     mark: { letter: 'E', color: '#52b54b' },
-    getAvailability: () => ({ configured: Boolean(getEmbySession()?.serverUrl && getEmbySession()?.accessToken) }),
+    getAvailability: () => ({ configured: Boolean(getEmbySession()?.serverUrl && (getEmbySession()?.accessToken || (locked() && readDeploymentLock()?.username && readDeploymentLock()?.password))) }),
     capabilities: {
         search: true,
         playback: true,

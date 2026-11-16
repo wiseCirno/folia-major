@@ -9,6 +9,7 @@ import BravaisSeamHomeTools, { homePageLayout } from './BravaisSeamHomeTools';
 import BravaisSeamAccountSwitcher from './BravaisSeamAccountSwitcher';
 import { BravaisSeamAccountSlot, HomeSeamSections, HomeSeamShortcuts } from './BravaisSeamHome';
 import { BravaisSeamFlipText, useBravaisSeamFade } from './BravaisSeamFlip';
+import { isDeploymentLocked } from '../../../services/onlineMusic/deploymentLock';
 import { useBravaisReducedTransitions } from './bravaisMotion';
 import { bravaisRevealMotion } from './bravaisSeamMotion';
 import { abbreviateSeamTabLabels } from './bravaisSeamTabLabels';
@@ -182,7 +183,7 @@ const BravaisSeamHomeRow: React.FC<{
                     <ListFilter aria-hidden />
                 </button>
             )}
-            {home?.account && (
+            {home?.account && !isDeploymentLocked() && (
                 <div ref={accountRef} className="bravais-seam-row-account">
                     <BravaisSeamAccountSlot account={home.account} compact={compact || fit.accountCompact} />
                 </div>
@@ -204,7 +205,7 @@ const BravaisSeamHomeRow: React.FC<{
                 {measureNav('untitled', { title: false, jumps: true, abbreviated: false })}
                 {measureNav('no-shortcuts', { title: false, jumps: false, abbreviated: false })}
                 {measureNav('short', { title: false, jumps: false, abbreviated: true })}
-                {home?.account && (
+                {home?.account && !isDeploymentLocked() && (
                     <>
                         <div data-bravais-row-measure="account-full"><BravaisSeamAccountSwitcher account={home.account} compact={compact} measure /></div>
                         <div data-bravais-row-measure="account-compact"><BravaisSeamAccountSwitcher account={home.account} compact measure /></div>

@@ -33,28 +33,30 @@ const IntegrationPage: React.FC = () => {
     const setObsKeepAnimation = useStageSettingsStore(state => state.handleToggleObsKeepMainWindowAnimation);
     return (
         <>
-            <Group def={SERVICES}>
-                {readDeploymentLock()?.platformId !== 'emby' && <NavidromeRows />}
-                <EmbyRows />
-                <SyncServerRows />
-                {isElectron && (
-                    <>
-                        <Row option={O.discord} hint={t('options.discordRichPresenceDesc')}>
-                            {discord.enabled && (
-                                <Status tone={!discord.status?.enabled ? undefined : discord.status.connected ? 'ok' : 'warn'}>
-                                    {t(!discord.status?.enabled
-                                        ? 'options.discordPresenceDisabled'
-                                        : discord.status.connected ? 'options.discordPresenceConnected' : 'options.discordPresenceDisconnected')}
-                                </Status>
-                            )}
-                            <Toggle checked={discord.enabled} onChange={enabled => void discord.onToggle(enabled)} />
-                        </Row>
-                        <Reveal when={Boolean(discord.status?.error)}>
-                            <Row sub label={<Status tone="error">{discord.status?.error}</Status>} />
-                        </Reveal>
-                    </>
-                )}
-            </Group>
+            {!readDeploymentLock() && (
+                <Group def={SERVICES}>
+                    <NavidromeRows />
+                    <EmbyRows />
+                    <SyncServerRows />
+                    {isElectron && (
+                        <>
+                            <Row option={O.discord} hint={t('options.discordRichPresenceDesc')}>
+                                {discord.enabled && (
+                                    <Status tone={!discord.status?.enabled ? undefined : discord.status.connected ? 'ok' : 'warn'}>
+                                        {t(!discord.status?.enabled
+                                            ? 'options.discordPresenceDisabled'
+                                            : discord.status.connected ? 'options.discordPresenceConnected' : 'options.discordPresenceDisconnected')}
+                                    </Status>
+                                )}
+                                <Toggle checked={discord.enabled} onChange={enabled => void discord.onToggle(enabled)} />
+                            </Row>
+                            <Reveal when={Boolean(discord.status?.error)}>
+                                <Row sub label={<Status tone="error">{discord.status?.error}</Status>} />
+                            </Reveal>
+                        </>
+                    )}
+                </Group>
+            )}
 
             <Group def={STREAMING}>
                 <Row option={O.transparentBackground} hint={t('options.transparentPlayerBackgroundDesc')}>

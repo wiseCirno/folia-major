@@ -14,6 +14,7 @@ import { usePersonalFmCatalog } from '../../../hooks/usePersonalFmCatalog';
 import { selectProviderPersonalFm, usePersonalFmModeStore } from '../../../stores/usePersonalFmModeStore';
 import { getLocalLibraryAvailability } from '../../../services/localLibraryAvailability';
 import { getPersonalFmSelectionLabel } from '../../../services/onlineMusic/fmModes';
+import { isDeploymentLocked } from '../../../services/onlineMusic/deploymentLock';
 import { useLibraryAccountProviders } from '../account/useLibraryAccount';
 
 // src/library/core/home/useLibraryHomeSources.ts
@@ -88,21 +89,29 @@ export const useLibraryHomeSources = ({
     }, [online.canUseExplore, setTab, tab]);
 
     const localAvailability = getLocalLibraryAvailability();
+    const visibleNavidrome = !isDeploymentLocked() && navidromeEnabled;
     const tabs = useMemo(() => translateHomeTabs(resolveHomeTabs({
         visibility,
-        navidromeEnabled,
+        navidromeEnabled: visibleNavidrome,
         online,
         localAvailability: { supported: localAvailability.supported, reason: localAvailability.reason },
-    }), t), [localAvailability.reason, localAvailability.supported, navidromeEnabled, online, t, visibility]);
+    }), t), [localAvailability.reason, localAvailability.supported, visibleNavidrome, online, t, visibility]);
+
+    const resolvedTab = tabs.some(entry => entry.key === tab && !entry.disabledReason)
+        ? tab : (tabs.find(entry => !entry.disabledReason)?.key ?? 'playlist');
+    // A saved tab from another deployment must not mount an unregistered provider's library.
+    useEffect(() => {
+        if (resolvedTab !== tab) setTab(resolvedTab);
+    }, [resolvedTab, tab, setTab]);
 
     const personalFmModeLabel = online.hasPersonalFmModes
         ? getPersonalFmSelectionLabel(personalFmSelection, (key, fallback) => t(key, fallback ?? ''), catalog)
         : '';
 
     return {
-        tab,
+        tab: resolvedTab,
         setTab,
-        isOnlineTab: isOnlineHomeTab(tab),
+        isOnlineTab: isOnlineHomeTab(resolvedTab),
         online,
         tabs,
         personalFmModeLabel,

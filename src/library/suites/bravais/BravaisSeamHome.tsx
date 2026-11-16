@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import type { BravaisLayer, BravaisSeamTab } from './bravaisLayer';
 import type { BravaisHomeAccount, BravaisHomeEntry, BravaisHomeSection, BravaisHomeShortcut } from './bravaisHomeModels';
 import type { BravaisSeamLevel } from './bravaisSeamLevel';
+import { isDeploymentLocked } from '../../../services/onlineMusic/deploymentLock';
 import BravaisSeamAccountSwitcher from './BravaisSeamAccountSwitcher';
 import BravaisSeamHomeTools, { homePageLayout } from './BravaisSeamHomeTools';
 import { abbreviateSeamTabLabel, abbreviateSeamTabLabels } from './bravaisSeamTabLabels';
@@ -404,7 +405,7 @@ const BravaisSeamHome: React.FC<{
                 </button>
             )}
             {/* fb4：账户入口贴在工具格正上方（不在中段），平台列表从它往上弹出、盖在导航区上。 */}
-            {home?.account && <BravaisSeamAccountSlot account={home.account} compact={compact} />}
+            {home?.account && !isDeploymentLocked() && <BravaisSeamAccountSlot account={home.account} compact={compact} />}
             {home && (
                 <BravaisSeamHomeTools home={home} compact={compact} onExpand={expand}
                     menuShortcuts={shortcuts && !shortcutsInColumn ? shortcuts : null} onOpenShortcut={openShortcut}

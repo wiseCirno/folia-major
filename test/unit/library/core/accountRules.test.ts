@@ -125,9 +125,10 @@ describe('active provider fallback', () => {
         expect(resolveActiveProviderId(providers, 'folium.mod-a.source')).toBe('folium.mod-a.source');
     });
 
-    it('falls back to the default provider (netease) when the stored provider went away', () => {
+    it('falls back to a registered provider when the stored provider went away', () => {
         expect(resolveActiveProviderId(providers, 'folium.mod-gone.source')).toBe('netease');
-        expect(resolveActiveProviderId([], 'kugou')).toBe('netease');
+        expect(resolveActiveProviderId([], 'kugou')).toBe('navidrome');
+        expect(resolveActiveProviderId([summary({ providerId: 'emby' })], 'navidrome')).toBe('emby');
     });
 
     it('finds the active summary, or the first provider when even netease is missing', () => {

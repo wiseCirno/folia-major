@@ -34,6 +34,12 @@ describe('parseDeploymentLock', () => {
             FOLIA_ONLINE_SERVER_URL: 'https://emby.example.com',
             FOLIA_ONLINE_API_KEY: 'key',
         })).toMatchObject({ platformId: 'emby', serverUrl: 'https://emby.example.com', apiKey: 'key' });
+        expect(parseDeploymentLock({
+            FOLIA_ONLINE_PLATFORM: 'emby',
+            FOLIA_ONLINE_SERVER_URL: 'https://emby.example.com',
+            FOLIA_ONLINE_USERNAME: 'ada',
+            FOLIA_ONLINE_PASSWORD: 'secret',
+        })).toMatchObject({ platformId: 'emby', apiKey: '', username: 'ada', password: 'secret' });
     });
 });
 

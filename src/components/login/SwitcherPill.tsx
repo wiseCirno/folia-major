@@ -10,8 +10,8 @@ import { PLAYER_BOTTOM_BAR_BASE_OFFSET_PX, resolvePlayerBottomComponentBottomPx 
 import { Tooltip } from '../modal/settings/kit';
 import { settingsTokens, useSettingsKitTheme } from '../modal/settings/kit/kitTheme';
 import { kitMotionTokens, useKitReducedMotion } from '../modal/settings/kit/motion';
-import { isDeploymentLocked } from '@/services/onlineMusic/deploymentLock.ts';
 import { openLoginWindow, useLoginWindowStore } from './loginWindowStore';
+import { isDeploymentLocked } from '@/services/onlineMusic/deploymentLock.ts';
 import { AccountPicture, PlatformMark } from './PlatformMark';
 import { pillProvider, pillSeenNext, rowStatus, type PillSeen } from './platformRows';
 
@@ -116,28 +116,29 @@ const SwitcherPill: React.FC<SwitcherPillProps> = ({ account, onBackToPlayer }) 
             style={{ ...settingsTokens(isDaylight, theme), ...kitMotionTokens(reduced), '--login-edge': 'var(--st-menu)' } as React.CSSProperties}
         >
             <div className="flex items-center rounded-[26px] bg-[var(--st-menu)] p-0.5 text-[color:var(--st-t1)] shadow-lg md:p-1.5">
-                <Tooltip text={t(isDeploymentLocked() ? 'home.deploymentLocked' : 'home.switchOnlineProvider')} className="inline-flex">
-                    <button
-                        type="button"
-                        onClick={event => {
-                            if (isDeploymentLocked()) return;
-                            openLoginWindow(provider.providerId, event.currentTarget.querySelector('[data-login-pill]'));
-                        }}
-                        aria-label={t(isDeploymentLocked() ? 'home.deploymentLocked' : 'home.switchOnlineProvider')}
-                        className="st-t-fast flex h-10 min-w-10 items-center rounded-full transition-colors hover:bg-[var(--st-fill)]"
-                    >
-                        {/* 登录窗口从这里出来，登录成功后头像飞回这里（done/LoginDone.tsx 按这个属性找它，属性的值是这里画的平台）。 */}
-                        <span data-login-pill={provider.providerId} className="inline-flex" style={landing && status === 'signed-in' ? { opacity: 0 } : undefined}>
-                            {status === 'signed-in' && provider.user
-                                ? <AccountPicture user={provider.user} size={40} providerId={provider.providerId} />
-                                : <PlatformMark providerId={provider.providerId} label={providerDisplayName(t, provider)} size={40} ranOut={status === 'ran-out'} />}
-                        </span>
-                        <span className={`st-t-move overflow-hidden whitespace-nowrap text-xs font-semibold transition-[max-width,opacity,padding] ${showLabel || status === 'checking' ? 'max-w-[180px] pl-2.5 pr-3 opacity-100' : 'max-w-0 opacity-0'}`}>
-                            {status === 'checking' ? t('login.rowChecking') : providerDisplayName(t, provider)}
-                        </span>
-                    </button>
-                </Tooltip>
-                <span className="mx-1.5 hidden h-6 w-px bg-[var(--st-line2)] md:block" aria-hidden="true" />
+                {!isDeploymentLocked() && (
+                    <>
+                        <Tooltip text={t('home.switchOnlineProvider')} className="inline-flex">
+                            <button
+                                type="button"
+                                onClick={event => openLoginWindow(provider.providerId, event.currentTarget.querySelector('[data-login-pill]'))}
+                                aria-label={t('home.switchOnlineProvider')}
+                                className="st-t-fast flex h-10 min-w-10 items-center rounded-full transition-colors hover:bg-[var(--st-fill)]"
+                            >
+                                {/* 登录窗口从这里出来，登录成功后头像飞回这里（done/LoginDone.tsx 按这个属性找它，属性的值是这里画的平台）。 */}
+                                <span data-login-pill={provider.providerId} className="inline-flex" style={landing && status === 'signed-in' ? { opacity: 0 } : undefined}>
+                                    {status === 'signed-in' && provider.user
+                                        ? <AccountPicture user={provider.user} size={40} providerId={provider.providerId} />
+                                        : <PlatformMark providerId={provider.providerId} label={providerDisplayName(t, provider)} size={40} ranOut={status === 'ran-out'} />}
+                                </span>
+                                <span className={`st-t-move overflow-hidden whitespace-nowrap text-xs font-semibold transition-[max-width,opacity,padding] ${showLabel || status === 'checking' ? 'max-w-[180px] pl-2.5 pr-3 opacity-100' : 'max-w-0 opacity-0'}`}>
+                                    {status === 'checking' ? t('login.rowChecking') : providerDisplayName(t, provider)}
+                                </span>
+                            </button>
+                        </Tooltip>
+                        <span className="mx-1.5 hidden h-6 w-px bg-[var(--st-line2)] md:block" aria-hidden="true" />
+                    </>
+                )}
                 <Tooltip text={t('home.backToPlayer')} className="hidden md:inline-flex">
                     <button
                         type="button"
