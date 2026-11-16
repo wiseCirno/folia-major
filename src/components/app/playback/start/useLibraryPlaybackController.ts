@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import type { MotionValue } from 'framer-motion';
 import { LyricParserFactory } from '../../../../utils/lyrics/LyricParserFactory';
-import { getFromCacheWithMigration, getLocalSong, getLocalSongs, removeFromCache, saveLocalSong, saveToCache } from '../../../../services/db';
-import { getCachedCoverUrl, loadCachedOrFetchCover } from '../../../../services/coverCache';
-import { ensureLocalSongCoverAsset } from '../../../../services/localMusicService';
+import { getFromCacheWithMigration, getLocalSong, getLocalSongs, removeFromCache, saveToCache } from '../../../../services/db';
+import { loadCachedOrFetchCover } from '../../../../services/coverCache';
 import { addSongsToLocalPlaylist, buildCanonicalLocalSongIdIndex, createLocalPlaylist, getLocalPlaylists, setLocalSongFavorite } from '../../../../services/localPlaylistService';
 import { applyLocalLibraryEntityDisplay, buildLocalQueue, buildNavidromeQueue, buildUnifiedLocalSong, buildUnifiedNavidromeSong, resolveLocalSongMetadata } from '../../../../services/playbackAdapters';
 import { getPrefetchedData, prefetchNearbySongs } from '../../../../services/prefetchService';
@@ -33,7 +31,6 @@ import { applyUploadedLocalLyrics } from '../../../../utils/lyrics/localLyricsUp
 import { omni } from '../../../../services/onlineMusic/omni';
 import { onlineMutationFailureText } from '../../../../services/onlineMusic/failure/onlineMutationFailure';
 import { getProviderSongMetadata } from '../../../../services/onlineMusic/songMetadata';
-import { getSongResourceCacheKey } from '../../../../services/onlineMusic/resourceKeys';
 import { getSongCacheWithLegacyMigration } from '../../../../services/onlineMusic/resourceCache';
 import { getProviderCacheKey } from '../../../../services/onlineMusic/providerStorage';
 import { getNavidromeConfig, navidromeApi } from '../../../../services/navidromeService';
@@ -41,18 +38,17 @@ import { notifyPlaybackFailed, untransformedLyrics } from '../../../../services/
 import { lyricsBeforeRules } from '../../../../utils/lyrics/lyricLineRules';
 import { wholeQueueWritesSoFar } from '../../../../services/wholeQueueWrites';
 import { PlayerState } from '../../../../types';
-import type { LyricData, LocalPlaylist, LocalSong, OnlineLyricsState, QueueAddBehavior, SongResult, StatusMessage } from '../../../../types';
-import type { AudioQualityPreference, MediaId, ProviderCollection } from '../../../../types/onlineMusic';
+import type { LyricData, LocalPlaylist, LocalSong, OnlineLyricsState, SongResult } from '../../../../types';
+import type { MediaId, ProviderCollection } from '../../../../types/onlineMusic';
 import type { PlaybackSnapshot, PlaybackNavigationOptions } from '../../../../types/appPlayback';
 import { getNavidromeMatchCacheKey, type NavidromeMatchData, type NavidromeSong } from '../../../../types/navidrome';
 import { applyQueueAddBehavior } from '../../../../utils/queueAddBehavior';
 import { loadOnlineLyricsState, resolveOnlineLyrics, saveOnlineLyricsState, getOnlineLyricsStateCacheKey } from '../../../../utils/onlineLyricsState';
-import { hasLocalSongCover } from '../../../../utils/localSongCover';
 import { isSameLocalSongRecord } from '../../../../utils/localSongRecordEquality';
 import { getLocalCoverAssetUrl } from '../../../../services/localCoverAssetUrl';
 import { applyMatchedMetadata } from '../../../../services/localLibraryCatalogService';
 import { setLocalSongPureMusicMark } from '../../../../services/localSongMatchSelectionService';
-import { buildLocalSongLyricMatchContext, shouldRefreshLocalSongLyricsFromMetadata, shouldRunLocalSongAutomaticMatch } from '../../../../utils/lyrics/localSongMatchContext';
+import { buildLocalSongLyricMatchContext } from '../../../../utils/lyrics/localSongMatchContext';
 import { getLocalLibraryCatalogSnapshot } from '../../../../services/localLibraryEntityRepository';
 import { setStatusMessage as setStatusMsg } from '../../../../stores/useStatusMessageStore';
 import { useLyricSettingsStore } from '../../../../stores/useLyricSettingsStore';
@@ -210,7 +206,6 @@ export function useLibraryPlaybackController({
     interruptStagePlaybackForMainTransition,
     blobUrlRef,
     shouldAutoPlayRef,
-    currentOnlineAudioUrlFetchedAtRef,
     pendingResumeTimeRef,
     lastAudioRecoverySourceRef,
 }: UseLibraryPlaybackControllerParams) {
@@ -521,37 +516,9 @@ export function useLibraryPlaybackController({
         setStatusMsg({ type: 'success', text: t('status.playlistUpdated') || '' });
     }, [setStatusMsg, t]);
 
-    const handleLocalSongMatch = useCallback(async (localSong: LocalSong): Promise<{ updatedLocalSong: LocalSong; matchedSongResult: SongResult | null; }> => {
-        let updatedLocalSong = localSong;
-        let matchedSongResult: SongResult | null = null;
-        const onlineFirst = useLyricSettingsStore.getState().localLyricsPriority === 'online';
-        const needsLyricsMatch = (
-            (onlineFirst || (!localSong.hasLocalLyrics && !localSong.hasEmbeddedLyrics))
-            && (!localSong.matchedLyrics && !localSong.matchedIsPureMusic
-                || shouldRefreshLocalSongLyricsFromMetadata(localSong))
-        );
-        const needsCoverMatch = !hasLocalSongCover(localSong) && !localSong.onlineMetadata?.coverUrl;
-
-        // 标记为纯音乐的歌 matchLyrics 整个不做（封面也是），这里就别提示「正在匹配歌词和封面」。
-        if (!localSong.markedPureMusic && (needsLyricsMatch || needsCoverMatch) && shouldRunLocalSongAutomaticMatch(localSong)) {
-            setStatusMsg({ type: 'info', text: t('status.matchingLyricsAndCover') || '' });
-            try {
-                const { matchLyrics } = await import('../../../../services/localMusicService');
-                await matchLyrics(localSong);
-            } catch (error) {
-                console.warn('Auto-match failed:', error);
-            }
-            // 只把这一首的最新记录换进 localSongs。以前这里整表 loadLocalSongs，换掉了预热正在写的那批对象，
-            // 预热结果因此到不了下一次切歌；整表替换还会让依赖 localSongs 的曲库视图跟着全量重算。
-            const found = await getLocalSong(localSong.id);
-            if (found) {
-                updatedLocalSong = found;
-                patchLocalSongsInState([found]);
-            }
-        }
-
-        return { updatedLocalSong, matchedSongResult };
-    }, [patchLocalSongsInState, setStatusMsg]);
+    const handleLocalSongMatch = useCallback(async (localSong: LocalSong): Promise<{ updatedLocalSong: LocalSong; matchedSongResult: SongResult | null; }> => (
+        { updatedLocalSong: localSong, matchedSongResult: null }
+    ), []);
 
     const resolveLocalMetadataUI = useCallback(async (localData: LocalSong, matchedSong: SongResult | null) => {
         const localCoverUrl = getLocalCoverAssetUrl(localData.localCoverAssetId, 1024);
@@ -620,8 +587,7 @@ export function useLibraryPlaybackController({
     }, [currentSong, lyrics, resolveLocalSongRecord, resolveOnlineSongLyricsState]);
 
     const handleLocalQueueAdd = useCallback(async (localSong: LocalSong) => {
-        const preparedLocalSong = await ensureLocalSongCoverAsset(localSong);
-        const { unifiedSong } = await resolveLocalMetadataUI(preparedLocalSong, null);
+        const { unifiedSong } = await resolveLocalMetadataUI(localSong, null);
         // The queue and the song as the store holds them after those waits, as the online add reads them
         // (appendOnlineSongsToMainQueue): an edit or a whole-queue write made meanwhile is added to, not undone.
         const live = usePlaybackStore.getState();
@@ -648,29 +614,7 @@ export function useLibraryPlaybackController({
     }, [persistLastPlaybackCache, queueAddBehavior, resolveLocalMetadataUI, setPlayQueue, setStatusMsg, t]);
 
     // 预热一首本地歌曲的封面与在线匹配；可能写过库（提取了封面或跑过匹配）时返回 true，供调用方回写到 localSongs。
-    const prewarmLocalSongMetadata = useCallback(async (localSong: LocalSong): Promise<boolean> => {
-        const preparedLocalSong = await ensureLocalSongCoverAsset(localSong);
-        const coverExtracted = preparedLocalSong !== localSong;
-        Object.assign(localSong, preparedLocalSong);
-
-        const onlineFirst = useLyricSettingsStore.getState().localLyricsPriority === 'online';
-        const needsLyricsMatch = (
-            (onlineFirst || (!localSong.hasLocalLyrics && !localSong.hasEmbeddedLyrics))
-            && (!localSong.matchedLyrics && !localSong.matchedIsPureMusic
-                || shouldRefreshLocalSongLyricsFromMetadata(localSong))
-        );
-        const needsCoverMatch = !hasLocalSongCover(localSong) && !localSong.onlineMetadata?.coverUrl;
-        if (!localSong.markedPureMusic && (needsLyricsMatch || needsCoverMatch) && shouldRunLocalSongAutomaticMatch(localSong)) {
-            try {
-                const { matchLyrics } = await import('../../../../services/localMusicService');
-                await matchLyrics(localSong);
-            } catch (error) {
-                console.warn('[LocalPrewarm] Failed to prewarm local song metadata:', error);
-            }
-            return true;
-        }
-        return coverExtracted;
-    }, []);
+    const prewarmLocalSongMetadata = useCallback(async (_localSong: LocalSong): Promise<boolean> => false, []);
 
     const prewarmNearbyLocalSongs = useCallback((currentLocalSong: LocalSong, queue: LocalSong[] = []) => {
         if (queue.length === 0) {
@@ -715,7 +659,7 @@ export function useLibraryPlaybackController({
         // Asked before the file is read: on the HiFi route mpv reads the file itself, and no blob URL is made.
         const onHifi = hifiRouteFor('local', `local:${localSong.id}`) === 'hifi';
         const audio = onHifi ? await loadLocalSongHifiSource(localSong) : await loadLocalSongAudio(localSong);
-        if (!audio) {
+        if (audio == null) {
             // Another song was asked for while the file was read: this failure is not the listener's
             // any more, and is neither said nor told.
             if (stillWanted()) {

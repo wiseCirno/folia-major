@@ -72,9 +72,6 @@ import {
 import { usePlayerPanelModel } from './components/app/player-panel/usePlayerPanelModel';
 import { createQueueMutations } from './components/app/player-panel/createQueueMutations';
 import { Album, Artist, LyricData, Theme, PlayerState, SongResult, ReplayGainMode, StatusMessage, PlaybackContext, StageLoopMode, UnifiedSong } from './types';
-import type { LocalSong } from './types';
-import { getLocalSongArrayBuffer } from './services/localMusicService';
-import { registerLocalTrackFileReader } from './services/analysis/trackAudio';
 import type { MediaId, ProviderCollection } from './types/onlineMusic';
 import { resolveSongCatalogRef } from './services/onlineMusic/catalogRefs';
 import { omni } from './services/onlineMusic/omni';
@@ -419,7 +416,7 @@ export default function App() {
     const handleToggleNavidromeEnabled = useCallback((enabled: boolean) => {
         setNavidromeEnabledState(enabled);
         if (!enabled && homeViewTab === 'navidrome') {
-            setHomeViewTab('local');
+            setHomeViewTab('playlist');
         }
     }, [homeViewTab, setHomeViewTab]);
 
@@ -1112,20 +1109,6 @@ export default function App() {
     // never fires `ended`, so its wrap back to the start is what says it was played through.
     const loopPositionRef = useRef<{ src: string; time: number } | null>(null);
 
-    // Reads a local track's bytes off its own file handle, so automix can separate a next-up local
-    // song whose head has no prefetch URL and never enters the online media cache. Resolved here
-    // because App owns the local library; the real LocalSong (with its handle) is looked up by id.
-    const getLocalStemBytes = useCallback(async (song: SongResult): Promise<ArrayBuffer | null> => {
-        if (!isLocalPlaybackSong(song)) return null;
-        const local = localSongs.find(candidate => candidate.id === song.localRef.songId);
-        return getLocalSongArrayBuffer((local ?? song) as unknown as LocalSong);
-    }, [localSongs]);
-    // The same reader for every analyser (analysis/trackAudio.ts): 智能动感模式 and automix's
-    // profile read a local track that has no URL in hand through it too.
-    useEffect(() => {
-        registerLocalTrackFileReader(getLocalStemBytes);
-        return () => registerLocalTrackFileReader(null);
-    }, [getLocalStemBytes]);
 
     // mpv is not one of the two decks a blend needs: off while this song or the next one plays on HiFi.
     const hifiBlocksAutomix = useHifiAutomixGate();
@@ -1152,7 +1135,7 @@ export default function App() {
             });
         },
         onDeckPlayedOut: (song, src) => cachePlayedOutRef.current(song, src),
-        getLocalStemBytes,
+        getLocalStemBytes: async () => null,
     });
 
     automixRef.current = automix;

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePlaybackReportReady } from '../../../../services/onlineMusic/playbackReportGate';
 import { useAudioSettingsStore } from '../../../../stores/useAudioSettingsStore';
 import { usePlayerChromeSettingsStore } from '../../../../stores/usePlayerChromeSettingsStore';
 import { useStageSettingsStore } from '../../../../stores/useStageSettingsStore';
@@ -31,11 +30,6 @@ const IntegrationPage: React.FC = () => {
     const transparentPlayerBackground = usePlayerChromeSettingsStore(state => state.transparentPlayerBackground);
     const obsKeepAnimation = useStageSettingsStore(state => state.obsKeepMainWindowAnimation);
     const setObsKeepAnimation = useStageSettingsStore(state => state.handleToggleObsKeepMainWindowAnimation);
-    const scrobbleEnabled = useAudioSettingsStore(state => state.neteaseScrobbleEnabled);
-    const setScrobbleEnabled = useAudioSettingsStore(state => state.handleToggleNeteaseScrobble);
-    // Subscribed to, so the row follows the reporting account signing in or out while the page is open.
-    const canScrobble = usePlaybackReportReady();
-
     return (
         <>
             <Group def={SERVICES}>
@@ -58,13 +52,6 @@ const IntegrationPage: React.FC = () => {
                         </Reveal>
                     </>
                 )}
-                <Row
-                    option={O.scrobble}
-                    hint={t(canScrobble ? 'options.neteaseScrobbleDesc' : 'options.neteaseScrobbleSignInHint')}
-                    disabled={!canScrobble}
-                >
-                    <Toggle checked={scrobbleEnabled} onChange={setScrobbleEnabled} />
-                </Row>
             </Group>
 
             <Group def={STREAMING}>

@@ -44,7 +44,6 @@ const O = {
     tabRadio: option(HOME, 'showHomeTabRadio', 'options.showHomeTabRadio'),
     tabExplore: option(HOME, 'showHomeTabExplore', 'options.showHomeTabExplore'),
     tabAlbums: option(HOME, 'showHomeTabAlbums', 'options.showHomeTabAlbums'),
-    tabLocal: option(HOME, 'showHomeTabLocal', 'options.showHomeTabLocal'),
     cardStyle: option(HOME, 'grid3dCardStyle', 'options.grid3dCardStyle', GRID_ONLY),
     rememberPosition: option(HOME, 'rememberHomeCardPosition', 'options.rememberHomeCardPosition', GRID_ONLY),
     fullBleedCover: option(GRID, 'gridViewFullBleedCover', 'options.gridViewFullBleedCover'),
@@ -68,14 +67,12 @@ const HomePage: React.FC = () => {
         tabPlaylist: state.showHomeTabPlaylist,
         tabRadio: state.showHomeTabRadio,
         tabAlbums: state.showHomeTabAlbums,
-        tabLocal: state.showHomeTabLocal,
         tabExplore: state.showHomeTabExplore,
         cardStyle: state.grid3dCardStyle,
         rememberPosition: state.rememberHomeCardPosition,
         setTabPlaylist: state.handleToggleHomeTabPlaylist,
         setTabRadio: state.handleToggleHomeTabRadio,
         setTabAlbums: state.handleToggleHomeTabAlbums,
-        setTabLocal: state.handleToggleHomeTabLocal,
         setTabExplore: state.handleToggleHomeTabExplore,
         setCardStyle: state.handleSetGrid3dCardStyle,
         setRememberPosition: state.handleToggleRememberHomeCardPosition,
@@ -127,7 +124,6 @@ const HomePage: React.FC = () => {
                             { id: O.tabRadio.id, label: t('home.radioTab'), checked: home.tabRadio, onChange: home.setTabRadio },
                             { id: O.tabExplore.id, label: t('home.explore'), checked: home.tabExplore, onChange: home.setTabExplore, disabled: !hasExplore },
                             { id: O.tabAlbums.id, label: t('home.albums'), checked: home.tabAlbums, onChange: home.setTabAlbums },
-                            { id: O.tabLocal.id, label: t('localMusic.folder'), checked: home.tabLocal, onChange: home.setTabLocal },
                         ]}
                     />
                 </Row>

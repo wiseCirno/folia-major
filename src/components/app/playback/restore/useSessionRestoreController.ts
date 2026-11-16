@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { getFromCache, getLocalSongs } from '../../../../services/db';
-import { getLocalLibraryCatalogSnapshot } from '../../../../services/localLibraryEntityRepository';
-import { buildLocalQueue } from '../../../../services/playbackAdapters';
+import { getFromCache } from '../../../../services/db';
 import { prefetchNearbySongs } from '../../../../services/prefetchService';
 import { reportYieldedQueue, wholeQueueWritesSoFar } from '../../../../services/wholeQueueWrites';
 import type { ThemeCacheSongKey } from '../../../../services/themeCache';
@@ -126,17 +124,9 @@ export function useSessionRestoreController({
                     || Boolean((song as any).localData?.id)
                 ));
                 if (containsLocalSnapshot) {
-                    const [localSongs, catalog] = await Promise.all([
-                        getLocalSongs(),
-                        getLocalLibraryCatalogSnapshot(),
-                    ]);
-                    const songsById = new Map(localSongs.map(song => [song.id, song]));
                     const rebuild = (cached: SongResult): SongResult | null => {
                         const songId = (cached as any).localRef?.songId || (cached as any).localData?.id;
-                        if (!songId) return cached;
-                        const localSong = songsById.get(songId);
-                        if (!localSong) return null;
-                        return buildLocalQueue([localSong], undefined, catalog)[0] || null;
+                        return songId ? null : cached;
                     };
                     lastSong = rebuild(lastSong);
                     lastQueue = (lastQueue || []).map(rebuild).filter((song): song is SongResult => Boolean(song));

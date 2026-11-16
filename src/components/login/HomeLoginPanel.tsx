@@ -5,6 +5,7 @@ import { useLibraryAccountProviders } from '../../library/core/account/useLibrar
 import { providerDisplayName } from '../../i18n/providerName';
 import { settingsTokens, useSettingsKitTheme } from '../modal/settings/kit/kitTheme';
 import { kitMotionTokens, useKitReducedMotion } from '../modal/settings/kit/motion';
+import { isDeploymentLocked } from '../../services/onlineMusic/deploymentLock';
 import { openLoginWindow } from './loginWindowStore';
 import { PlatformMark } from './PlatformMark';
 import { orderRows, rowStatus } from './platformRows';
@@ -28,6 +29,7 @@ const HomeLoginPanel: React.FC<HomeLoginPanelProps> = ({ account }) => {
     const active = rows.find(row => row.providerId === activeProviderId);
     // 正在用的平台的登录失效了。
     const ranOut = active ? rowStatus(active) === 'ran-out' : false;
+    const locked = isDeploymentLocked();
     const marks = rows.filter(row => rowStatus(row) !== 'off').slice(0, 3);
 
     return (
@@ -39,11 +41,13 @@ const HomeLoginPanel: React.FC<HomeLoginPanelProps> = ({ account }) => {
                 {ranOut ? t('status.loginExpired') : t('home.guestTitle')}
             </h2>
             <p className="login-rise mt-2 max-w-[516px] whitespace-pre-line text-[13px] leading-5 text-[color:var(--st-t2)]" style={{ animationDelay: '40ms' }}>
-                {ranOut
-                    ? t('home.guestPromptProvider', { provider: active ? providerDisplayName(t, active, activeProviderId) : activeProviderId })
-                    : t('home.guestPrompt')}
+                {locked
+                    ? t('home.deploymentLocked')
+                    : ranOut
+                        ? t('home.guestPromptProvider', { provider: active ? providerDisplayName(t, active, activeProviderId) : activeProviderId })
+                        : t('home.guestPrompt')}
             </p>
-            <button
+            {!locked && <button
                 type="button"
                 data-ponder="sign-in"
                 onClick={event => openLoginWindow(ranOut ? activeProviderId : null, event.currentTarget)}
@@ -58,7 +62,7 @@ const HomeLoginPanel: React.FC<HomeLoginPanelProps> = ({ account }) => {
                     ))}
                 </span>
                 <span className="truncate">{ranOut ? t('home.loginBrowserRetry') : t('home.login')}</span>
-            </button>
+            </button>}
         </div>
     );
 };

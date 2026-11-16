@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocalLibraryAutoScanState } from '../../../../../hooks/useLocalLibraryAutoScan';
-import { refreshLocalLibraryAutoScanRoots } from '../../../../../services/localLibraryAutoScan';
 import { useLocalLibrarySettingsStore } from '../../../../../stores/useLocalLibrarySettingsStore';
 import type { LocalLibraryAutoScanRootState } from '../../../../../types/localLibraryWatch';
 import { Button, Group, Reveal, Row, Status, Toggle } from '../../kit';
@@ -67,7 +66,7 @@ export const FolderWatchGroup: React.FC = () => {
                     );
                 })}
                 <Row sub label={<Status>{activity}</Status>}>
-                    <Button onClick={() => void refreshLocalLibraryAutoScanRoots()} disabled={autoScan.attaching}>
+                    <Button onClick={() => {}} disabled={autoScan.attaching}>
                         {t('options.localLibraryWatchRecheck')}
                     </Button>
                 </Row>

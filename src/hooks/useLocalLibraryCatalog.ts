@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { LocalLibraryAssignment, LocalLibraryEntity } from '../types/localLibrary';
-import { ensureLocalLibraryInitialized } from '../services/localLibraryCatalogService';
-import { getLocalLibraryAssignments, getLocalLibraryEntities } from '../services/localLibraryEntityRepository';
 
 // src/hooks/useLocalLibraryCatalog.ts
-// Refreshes the lightweight entity catalog whenever the owning local-song list changes.
+// The local library is gone. Callers still receive an empty, ready catalog.
 
 export interface LocalLibraryCatalogSnapshot {
   entities: LocalLibraryEntity[];
@@ -15,41 +13,13 @@ export interface LocalLibraryCatalogSnapshot {
   reload: () => Promise<void>;
 }
 
-export const useLocalLibraryCatalog = (refreshKey: unknown): LocalLibraryCatalogSnapshot => {
-  const [catalog, setCatalog] = useState<Omit<LocalLibraryCatalogSnapshot, 'reload'>>({
+export const useLocalLibraryCatalog = (_refreshKey: unknown): LocalLibraryCatalogSnapshot => {
+  const reload = useCallback(async () => {}, []);
+  return useMemo(() => ({
     entities: [],
     assignments: [],
-    ready: false,
+    ready: true,
     failed: false,
-  });
-
-  const reload = useCallback(async () => {
-    await ensureLocalLibraryInitialized();
-    const [entities, assignments] = await Promise.all([
-      getLocalLibraryEntities(),
-      getLocalLibraryAssignments(),
-    ]);
-    setCatalog({ entities, assignments, ready: true, failed: false });
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      await ensureLocalLibraryInitialized();
-      const [entities, assignments] = await Promise.all([
-        getLocalLibraryEntities(),
-        getLocalLibraryAssignments(),
-      ]);
-      if (!cancelled) setCatalog({ entities, assignments, ready: true, failed: false });
-    })().catch(error => {
-      console.error('[LocalLibrary] Failed to load entity catalog', error);
-      // A catalog read before stays the one in use.
-      if (!cancelled) setCatalog(current => (current.ready ? current : { ...current, failed: true }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey, reload]);
-
-  return useMemo(() => ({ ...catalog, reload }), [catalog, reload]);
+    reload,
+  }), [reload]);
 };

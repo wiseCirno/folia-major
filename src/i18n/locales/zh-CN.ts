@@ -380,6 +380,7 @@ export default {
     "shortcuts": "直达",
     "wallHint": {
       "guestTitle": "还没有连接在线平台",
+      "deploymentLocked": "这台服务器由部署配置指定，不能在这里更换。",
       "guestBody": "点信息条里的「{{connect}}」登录，你的歌单、电台和收藏的专辑会铺满这面墙。",
       "guestBodyWithLocal": "点信息条里的「{{connect}}」登录，你的歌单、电台和收藏的专辑会铺满这面墙；也可以到「{{local}}」页签导入音乐文件夹。",
       "reloginTitle": "{{provider}} 的登录已过期",
@@ -2050,6 +2051,7 @@ export default {
     "welcomeBack": "欢迎回来",
     "guestTitle": "先搜几首喜欢的歌试试看",
     "guestPrompt": "登录在线音乐平台，访问您的歌单、收藏专辑和电台。\n部分歌曲未登录仅能试听30s。",
+    "deploymentLocked": "这台服务器由部署配置指定，不能在这里更换。",
     "guestPromptProvider": "登录 {{provider}}，访问您的在线音乐库。",
     "accountlessTitle": "{{provider}} 暂不提供曲库",
     "accountlessBody": "歌单、专辑和电台将在 Folium v2 的完整音源接口中支持。\n现在可以搜索歌曲来播放。",
@@ -4957,9 +4959,23 @@ export default {
     "failed": "封面没有设置成功：{{error}}",
     "notImage": "这个文件不是 Folia 能读取的图片"
   },
+  "emby": {
+    "title": "Emby",
+    "settings": "Emby 设置",
+    "serverUrl": "服务器地址",
+    "serverUrlPlaceholder": "例如: http://localhost:8096",
+    "username": "用户名",
+    "password": "密码",
+    "login": "登录",
+    "loginNote": "填写 Emby 服务器地址、用户名和密码。浏览器会直接连接这台服务器。",
+    "lockedNote": "这台 Emby 服务器由部署配置指定。",
+    "errorBadCredentials": "用户名或密码不对",
+    "errorNetwork": "连不上这台 Emby 服务器",
+    "errorBadServerUrl": "服务器地址无效，需要以 http:// 或 https:// 开头"
+  },
   "navidrome": {
     "title": "Navi",
-    "enable": "连接Navidrome (实验性)",
+    "enable": "连接 Navidrome",
     "settings": "Navidrome 设置",
     "serverUrl": "服务器地址",
     "serverUrlPlaceholder": "例如: http://localhost:4533",

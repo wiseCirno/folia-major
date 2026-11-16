@@ -1,4 +1,3 @@
-import { isLocalLibraryAutoScanSupported } from '../../../../../services/localLibraryAutoScan';
 import { option, type SettingsGroupDef } from '../../kit';
 
 // src/components/modal/settings/pages/storage/options.ts
@@ -8,7 +7,7 @@ import { option, type SettingsGroupDef } from '../../kit';
 export const MEDIA: SettingsGroupDef = { id: 'mediaCache', titleKey: 'options.mediaCache' };
 export const CACHES: SettingsGroupDef = { id: 'cacheDetails', titleKey: 'options.cacheDetails' };
 // Drawn only where the browser can watch a folder (FolderWatchGroup).
-export const WATCH: SettingsGroupDef = { id: 'localLibraryWatch', titleKey: 'options.localLibraryWatch', available: isLocalLibraryAutoScanSupported };
+export const WATCH: SettingsGroupDef = { id: 'localLibraryWatch', titleKey: 'options.localLibraryWatch', available: () => false };
 export const BACKUP: SettingsGroupDef = { id: 'importExportTitle', titleKey: 'options.importExportTitle' };
 
 /** What the app keeps on disk, one row each, in the order they are drawn. */

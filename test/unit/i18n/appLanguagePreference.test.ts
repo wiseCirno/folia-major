@@ -53,7 +53,7 @@ describe('app language preference', () => {
         expect(setItem).not.toHaveBeenCalled();
     });
 
-    it.each(['en', 'zh-CN', 'zh-TW', 'in', 'vi'] as const)('keeps an explicit %s over the system language', async preference => {
+    it.each(['en', 'zh-CN', 'zh-TW'] as const)('keeps an explicit %s over the system language', async preference => {
         storage.set('folia_app_language', preference);
         storage.set('i18nextLng', 'zh-TW');
         const { default: i18n, readStoredAppLanguagePreference } = await start();
@@ -65,8 +65,8 @@ describe('app language preference', () => {
     it.each([
         ['zh-HK', 'zh-TW'],
         ['zh-Hant-TW', 'zh-TW'],
-        ['id-ID', 'in'],
-        ['vi-VN', 'vi'],
+        ['id-ID', 'en'],
+        ['vi-VN', 'en'],
         ['fr-FR', 'en'],
     ])('starts a %s system in %s, the same bundle the follow-system switch picks', async (system, expected) => {
         systemLanguage(system);

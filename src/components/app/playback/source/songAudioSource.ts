@@ -1,10 +1,8 @@
-import { getLocalSong } from '../../../../services/db';
 import type { HifiTrackSource } from '../../../../services/hifi/hifiPlayback';
-import { ensureLocalSongCoverAsset, getAudioFromLocalSong, getFileFromLocalSong } from '../../../../services/localMusicService';
 import { getNavidromeConfig, navidromeApi } from '../../../../services/navidromeService';
 import { loadOnlineSongAudioSource, type LoadOnlineAudioSourceOptions } from '../../../../services/onlinePlayback';
 import { getPlaybackRepresentationForRevision } from '../../../../services/playbackRecovery/representationRegistry';
-import { buildLocalSourceRevision, buildNavidromeSourceRevision } from '../../../../services/playbackRecovery/sourceRevision';
+import { buildNavidromeSourceRevision } from '../../../../services/playbackRecovery/sourceRevision';
 import type { PrefetchedSongData } from '../../../../services/prefetchService';
 import type { LocalSong, SongResult } from '../../../../types';
 import type { NavidromeConfig, NavidromeSong, SubsonicSong } from '../../../../types/navidrome';
@@ -31,34 +29,21 @@ import {
  * made if it had none. null when the file cannot be read.
  * The caller owns `blobUrl`: it plays it, or hands it to `retireBlobUrl`.
  */
-export const loadLocalSongAudio = async (localSong: LocalSong) => {
-    const blobUrl = await getAudioFromLocalSong(localSong);
-    if (!blobUrl) return null;
-    const preparedSong = await ensureLocalSongCoverAsset(localSong);
-    return {
-        blobUrl,
-        localSong: preparedSong,
-        /**
-         * The copy that took the place of this file's audio earlier in this session (a transcode of
-         * a format the browser cannot play), if it was made from the file as it is now.
-         */
-        recoveredCopy: (songKey: string) => (
-            getPlaybackRepresentationForRevision(songKey, buildLocalSourceRevision(preparedSong))
-        ),
-    };
-};
+export const loadLocalSongAudio = async (_localSong: LocalSong): Promise<{
+    blobUrl: string;
+    localSong: LocalSong;
+    recoveredCopy: (songKey: string) => { url?: string } | null;
+} | null> => null;
 
 /**
  * A local file for the HiFi route: the file itself, which mpv reads through the main process (it
  * cannot open a blob URL, so none is made), and its library record with the cover asset made if it
  * had none. null when the file cannot be read.
  */
-export const loadLocalSongHifiSource = async (localSong: LocalSong) => {
-    const file = await getFileFromLocalSong(localSong);
-    if (!file) return null;
-    const preparedSong = await ensureLocalSongCoverAsset(localSong);
-    return { file, localSong: preparedSong };
-};
+export const loadLocalSongHifiSource = async (_localSong: LocalSong): Promise<{
+    file: File;
+    localSong: LocalSong;
+} | null> => null;
 
 /**
  * The HiFi source of a song waiting in the queue, for mpv to queue behind the song playing so that
@@ -68,11 +53,7 @@ export const loadLocalSongHifiSource = async (localSong: LocalSong) => {
  * cannot be reached.
  */
 export const loadQueuedSongHifiSource = async (song: SongResult): Promise<HifiTrackSource | null> => {
-    if (isLocalPlaybackSong(song)) {
-        const localSong = await getLocalSong(song.localRef.songId);
-        const file = localSong ? await getFileFromLocalSong(localSong) : null;
-        return localSong && file ? { kind: 'local', localSong, file } : null;
-    }
+    if (isLocalPlaybackSong(song)) return null;
     const carrier = isNavidromePlaybackSong(song) ? resolveNavidromePlaybackCarrier(song) : null;
     const config = carrier ? getNavidromeConfig() : null;
     if (!carrier || !config) return null;

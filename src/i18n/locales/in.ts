@@ -380,6 +380,7 @@ export default {
     "shortcuts": "Langsung ke",
     "wallHint": {
       "guestTitle": "Belum ada layanan streaming yang terhubung",
+      "deploymentLocked": "Server ini diatur oleh deployment dan tidak bisa diganti di sini.",
       "guestBody": "Pilih “{{connect}}” di strip info untuk masuk, lalu playlist, radio, dan album simpanan Anda akan memenuhi dinding ini.",
       "guestBodyWithLocal": "Pilih “{{connect}}” di strip info untuk masuk, lalu playlist, radio, dan album simpanan Anda akan memenuhi dinding ini. Atau impor folder musik di tab {{local}}.",
       "reloginTitle": "Sesi {{provider}} Anda sudah kedaluwarsa",
@@ -2050,6 +2051,7 @@ export default {
     "welcomeBack": "Selamat Datang Kembali",
     "guestTitle": "Coba cari beberapa lagu dulu",
     "guestPrompt": "Login untuk mengakses playlist, album tersimpan, dan radio Anda.",
+    "deploymentLocked": "Server ini diatur oleh deployment dan tidak bisa diganti di sini.",
     "guestPromptProvider": "Login dengan {{provider}} untuk mengakses perpustakaan musik online Anda.",
     "accountlessTitle": "{{provider}} belum menyediakan perpustakaan",
     "accountlessBody": "Playlist, album, dan radio akan didukung oleh antarmuka sumber lengkap di Folium v2.\nUntuk saat ini, cari lagu untuk diputar.",
@@ -4957,9 +4959,23 @@ export default {
     "failed": "Sampul tidak diatur: {{error}}",
     "notImage": "Berkas itu bukan gambar yang dapat dibaca Folia"
   },
+  "emby": {
+    "title": "Emby",
+    "settings": "Pengaturan Emby",
+    "serverUrl": "URL server",
+    "serverUrlPlaceholder": "misalnya http://localhost:8096",
+    "username": "Nama pengguna",
+    "password": "Kata sandi",
+    "login": "Masuk",
+    "loginNote": "Isi URL server Emby, nama pengguna, dan kata sandi. Peramban terhubung langsung ke server itu.",
+    "lockedNote": "Server Emby ini diatur oleh deployment.",
+    "errorBadCredentials": "Nama pengguna atau kata sandi salah",
+    "errorNetwork": "Server Emby tidak menjawab",
+    "errorBadServerUrl": "URL server harus diawali http:// atau https://"
+  },
   "navidrome": {
     "title": "Navi",
-    "enable": "Hubungkan Navidrome (Eksperimental)",
+    "enable": "Hubungkan Navidrome",
     "settings": "Pengaturan Navidrome",
     "serverUrl": "URL Server",
     "serverUrlPlaceholder": "misalnya, http://localhost:4533",

@@ -9,7 +9,6 @@ import { closeSettings } from '../../../../stores/useSettingsModalStore';
 import { Button, CopyValue, FoldedGroup, Group, Row, Select, Toggle, Value, useSettingsKitTheme, type SettingsOptionDef } from '../kit';
 import { useSettingsPage } from './settingsPageContext';
 import ConfigTransferRows from './storage/ConfigTransferRows';
-import FolderWatchGroup from './storage/FolderWatchGroup';
 import { BACKUP, CACHE_ROWS, CACHES, MEDIA, O } from './storage/options';
 
 // src/components/modal/settings/pages/StoragePage.tsx
@@ -107,7 +106,6 @@ const StoragePage: React.FC = () => {
                 ))}
             </Group>
 
-            <FolderWatchGroup />
 
             <FoldedGroup def={BACKUP}>
                 <ConfigTransferRows />

@@ -10,6 +10,7 @@ import { PLAYER_BOTTOM_BAR_BASE_OFFSET_PX, resolvePlayerBottomComponentBottomPx 
 import { Tooltip } from '../modal/settings/kit';
 import { settingsTokens, useSettingsKitTheme } from '../modal/settings/kit/kitTheme';
 import { kitMotionTokens, useKitReducedMotion } from '../modal/settings/kit/motion';
+import { isDeploymentLocked } from '../../services/onlineMusic/deploymentLock';
 import { openLoginWindow, useLoginWindowStore } from './loginWindowStore';
 import { AccountPicture, PlatformMark } from './PlatformMark';
 import { pillProvider, pillSeenNext, rowStatus, type PillSeen } from './platformRows';
@@ -115,11 +116,14 @@ const SwitcherPill: React.FC<SwitcherPillProps> = ({ account, onBackToPlayer }) 
             style={{ ...settingsTokens(isDaylight, theme), ...kitMotionTokens(reduced), '--login-edge': 'var(--st-menu)' } as React.CSSProperties}
         >
             <div className="flex items-center rounded-[26px] bg-[var(--st-menu)] p-0.5 text-[color:var(--st-t1)] shadow-lg md:p-1.5">
-                <Tooltip text={t('home.switchOnlineProvider')} className="inline-flex">
+                <Tooltip text={t(isDeploymentLocked() ? 'home.deploymentLocked' : 'home.switchOnlineProvider')} className="inline-flex">
                     <button
                         type="button"
-                        onClick={event => openLoginWindow(provider.providerId, event.currentTarget.querySelector('[data-login-pill]'))}
-                        aria-label={t('home.switchOnlineProvider')}
+                        onClick={event => {
+                            if (isDeploymentLocked()) return;
+                            openLoginWindow(provider.providerId, event.currentTarget.querySelector('[data-login-pill]'));
+                        }}
+                        aria-label={t(isDeploymentLocked() ? 'home.deploymentLocked' : 'home.switchOnlineProvider')}
                         className="st-t-fast flex h-10 min-w-10 items-center rounded-full transition-colors hover:bg-[var(--st-fill)]"
                     >
                         {/* 登录窗口从这里出来，登录成功后头像飞回这里（done/LoginDone.tsx 按这个属性找它，属性的值是这里画的平台）。 */}

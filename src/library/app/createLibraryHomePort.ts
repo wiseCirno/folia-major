@@ -1,12 +1,10 @@
 import i18n from '../../i18n/config';
-import type { LibraryHomePort, LibraryHomeScanProgress } from '../core/home/homeModel.contract';
+import type { LibraryHomePort } from '../core/home/homeModel.contract';
 import type { HomeSurfaceProps } from '../../components/app/home/homeSurfaceTypes';
 import type { SongResult } from '../../types';
-import type { PersonalFmLaunch, PersonalFmSelection } from '../../types/personalFm';
+import type { PersonalFmSelection } from '../../types/personalFm';
 import { translateHomeMessage } from '../core/home/homeSources';
-import { importFolder, resyncAllFolders, LOCAL_MUSIC_SCAN_PROGRESS_EVENT } from '../../services/localMusicService';
 import { getLocalLibraryAvailability } from '../../services/localLibraryAvailability';
-import { importLocalPlaylistFile } from '../../services/localPlaylistFileService';
 import { useOnlineProviderAccountStore } from '../../stores/useOnlineProviderAccountStore';
 import { selectProviderPersonalFm, usePersonalFmModeStore } from '../../stores/usePersonalFmModeStore';
 import { isSamePersonalFmSelection, normalizePersonalFmSelection, toPersonalFmRequestOptions } from '../../services/onlineMusic/fmModes';
@@ -36,24 +34,11 @@ export const createLibraryHomePort = (getSurface: () => HomePortSurface): Librar
     let launched: { songs: SongResult[]; providerId: string; station: string | null; selection: PersonalFmSelection | null } | null = null;
     return {
         localAvailability: () => getLocalLibraryAvailability(),
-        importFolder: async () => (await importFolder()).length,
-        resyncAllFolders: async () => (await resyncAllFolders())?.length ?? 0,
-        importPlaylistFile: async (file) => {
-            const result = await importLocalPlaylistFile(file, getSurface().localSongs);
-            return {
-                playlistName: result.playlist?.name ?? null,
-                matchedCount: result.matchedSongIds.length,
-                skippedCount: result.unmatchedPaths.length + result.ambiguousPaths.length,
-            };
-        },
+        importFolder: async () => 0,
+        resyncAllFolders: async () => 0,
+        importPlaylistFile: async () => ({ playlistName: null, matchedCount: 0, skippedCount: 0 }),
         refreshLocalSongs: () => getSurface().onRefreshLocalSongs(),
-        subscribeScanProgress: (listener) => {
-            const handleScanProgress = (event: Event) => {
-                listener((event as CustomEvent<LibraryHomeScanProgress>).detail ?? null);
-            };
-            window.addEventListener(LOCAL_MUSIC_SCAN_PROGRESS_EVENT, handleScanProgress);
-            return () => window.removeEventListener(LOCAL_MUSIC_SCAN_PROGRESS_EVENT, handleScanProgress);
-        },
+        subscribeScanProgress: () => () => {},
         getPersonalFm: async (selection, cardProviderId) => {
             const request = ++personalFmRequest;
             const activeProvider = () => useOnlineProviderAccountStore.getState().activeProviderId;

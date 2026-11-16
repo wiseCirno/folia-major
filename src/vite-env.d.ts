@@ -19,6 +19,14 @@ declare global {
   const __APP_RELEASE_CHANNEL__: string;
   const __DOCKER_STACK_VERSION__: string;
 
+  interface ImportMetaEnv {
+    readonly VITE_FOLIA_ONLINE_PLATFORM?: string;
+    readonly VITE_FOLIA_ONLINE_SERVER_URL?: string;
+    readonly VITE_FOLIA_ONLINE_API_KEY?: string;
+    readonly VITE_FOLIA_ONLINE_USERNAME?: string;
+    readonly VITE_FOLIA_ONLINE_PASSWORD?: string;
+  }
+
   interface Window {
     __FOLIA_RUNTIME_CONFIG__?: {
       aiProvider?: 'gemini' | 'openai';

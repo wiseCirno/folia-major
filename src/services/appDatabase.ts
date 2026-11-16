@@ -2,11 +2,9 @@ import Dexie, { type Table } from 'dexie';
 import type { LocalSong } from '../types';
 import type { LocalLibraryAssignment, LocalLibraryEntity } from '../types/localLibrary';
 import type { LocalCoverAsset } from '../types/localCover';
-import { migrateLegacyLocalSongRecords } from './localLibraryV8Migration';
-import { getLocalSongAlbumContextKey } from '../utils/localLibraryNames';
 
 // src/services/appDatabase.ts
-// Owns the complete typed Dexie schema for local songs, entities, and content-addressed cover assets.
+// Owns the typed Dexie schema. Local-library tables stay until the services that read them are removed.
 
 export const APP_DATABASE_NAME = 'KineticPlayerDB';
 export const APP_DATABASE_VERSION_CHANGE_EVENT = 'folia-database-version-change';
@@ -71,18 +69,6 @@ export class AppDatabase extends Dexie {
       theme_registry: 'fingerprint',
       local_library_entities: 'id, kind, *normalizedAliases, mergedInto, needsReview, createdAt',
       local_library_assignments: 'songId, *artistEntityIds, albumEntityId, artistOrigin, albumOrigin',
-    }).upgrade(async transaction => {
-      const legacySongs = await transaction.table<LocalSong, string>('local_music').toArray();
-      const migrated = migrateLegacyLocalSongRecords(legacySongs as Array<LocalSong & Record<string, unknown>>);
-      await Promise.all([
-        transaction.table('local_music').bulkPut(migrated.songs),
-        transaction.table('local_library_entities').clear().then(() => (
-          transaction.table('local_library_entities').bulkPut(migrated.entities)
-        )),
-        transaction.table('local_library_assignments').clear().then(() => (
-          transaction.table('local_library_assignments').bulkPut(migrated.assignments)
-        )),
-      ]);
     });
 
     this.version(0.9).stores({
@@ -111,18 +97,7 @@ export class AppDatabase extends Dexie {
       local_library_entities: 'id, kind, *normalizedAliases, mergedInto, needsReview, createdAt',
       local_library_assignments: 'songId, *artistEntityIds, albumEntityId, artistOrigin, albumOrigin',
       local_cover_assets: 'id',
-    }).upgrade(transaction => transaction.table<LocalSong, string>('local_music').toCollection().modify(song => {
-      // A malformed record must not fail the upgrade (the database would not open); it simply gets no key
-      // and is still grouped by its album name, only without the same-folder hint.
-      let albumContextKey: string | undefined;
-      try {
-        albumContextKey = getLocalSongAlbumContextKey(song);
-      } catch {
-        albumContextKey = undefined;
-      }
-      if (albumContextKey) song.albumContextKey = albumContextKey;
-      else delete song.albumContextKey;
-    }));
+    });
 
     this.on('versionchange', event => {
       this.close();

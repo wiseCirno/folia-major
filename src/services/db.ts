@@ -1,13 +1,7 @@
 import type { LocalLibrarySnapshot, LocalSong } from '../types';
 import type { MigrationResult } from '../utils/lyrics/renderHints';
 import { appDatabase } from './appDatabase';
-import type { CacheData, SessionData } from './dbTypes';
-import {
-  assignImportedSongs,
-  deleteSongAssignment,
-  deleteSongAssignments,
-  ensureLocalLibraryInitialized,
-} from './localLibraryCatalogService';
+import type { SessionData } from './dbTypes';
 import {
   clearBrowserCacheByCategory,
   clearCacheTables,
@@ -23,18 +17,9 @@ import {
   type CacheCategory,
   type CacheTableName,
 } from './repositories/cacheRepository';
-import {
-  readLocalSong,
-  readLocalSongs,
-} from './repositories/localSongRepository';
 import { clearSessionValues, putSessionValue, readSession } from './repositories/sessionRepository';
 import { readThemeRegistryEntries, writeThemeRegistryEntries } from './repositories/themeRegistryRepository';
 import { clearCoverAssets, getCoverAssetUsage } from './binaryAssetStore';
-import { clearLocalCoverBinaries } from './localCoverBinaryStore';
-import {
-  cancelLocalCoverAssetMigration,
-  resetLocalCoverAssetRuntime,
-} from './localCoverAssetService';
 
 // src/services/db.ts
 // Keeps the historical storage API stable while delegating every IndexedDB operation to Dexie repositories.
@@ -188,63 +173,23 @@ export const clearCacheByCategory = async (category: CacheCategory): Promise<voi
   }
 };
 
-export const saveLocalSong = async (song: LocalSong): Promise<void> => {
-  await ensureLocalLibraryInitialized();
-  await assignImportedSongs([song]);
-};
+// The local library is gone. These stay so older callers compile while their call sites are removed.
+export const saveLocalSong = async (_song: LocalSong): Promise<void> => {};
 
-export const saveLocalSongs = async (songs: LocalSong[]): Promise<void> => {
-  await ensureLocalLibraryInitialized();
-  await assignImportedSongs(songs);
-};
+export const saveLocalSongs = async (_songs: LocalSong[]): Promise<void> => {};
 
-export const getLocalSongs = async (): Promise<LocalSong[]> => {
-  try {
-    await ensureLocalLibraryInitialized();
-    return await readLocalSongs();
-  } catch (error) {
-    console.error('Failed to get local songs', error);
-    return [];
-  }
-};
+export const getLocalSongs = async (): Promise<LocalSong[]> => [];
 
-/**
- * 按 id 读一首本地歌曲的最新记录。
- * 不走 ensureLocalLibraryInitialized：那一步要把 local_music 和 assignments 的主键整表读一遍，
- * 而这里只服务切歌、匹配写回这类「只关心一首」的热路径。读失败或记录不存在时返回 undefined。
- */
-export const getLocalSong = async (id: string): Promise<LocalSong | undefined> => {
-  try {
-    return await readLocalSong(id);
-  } catch (error) {
-    console.error('Failed to get local song', error);
-    return undefined;
-  }
-};
+export const getLocalSong = async (_id: string): Promise<LocalSong | undefined> => undefined;
 
-export const deleteLocalSong = async (id: string): Promise<void> => {
-  try {
-    await deleteSongAssignment(id);
-  } catch (error) {
-    console.error('Failed to delete local song', error);
-  }
-};
+export const deleteLocalSong = async (_id: string): Promise<void> => {};
 
-export const deleteLocalSongs = async (ids: string[]): Promise<void> => {
-  try {
-    await deleteSongAssignments(ids);
-  } catch (error) {
-    console.error('Failed to delete local songs', error);
-  }
-};
+export const deleteLocalSongs = async (_ids: string[]): Promise<void> => {};
 
 export const clearAllData = async (): Promise<void> => {
   try {
     if (hasElectronAudioCacheBridge()) await window.electron!.clearAudioCache();
     await clearCoverAssets();
-    await cancelLocalCoverAssetMigration();
-    await clearLocalCoverBinaries();
-    resetLocalCoverAssetRuntime();
     await appDatabase.delete();
     await appDatabase.open();
   } catch (error) {

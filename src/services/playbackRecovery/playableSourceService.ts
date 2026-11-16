@@ -1,8 +1,7 @@
 import type { LocalSong, SongResult } from '../../types';
 import type { TranscodeFallbackRequest, TranscodeFallbackResult, TranscodeFallbackSource } from '../../types/playbackRecovery';
-import { getFileFromLocalSong } from '../localMusicService';
 import { getPlaybackSongKey, isLocalPlaybackSong, isNavidromePlaybackSong, resolveNavidromePlaybackCarrier } from '../../utils/appPlaybackGuards';
-import { buildLocalSourceRevision, buildNavidromeSourceRevision } from './sourceRevision';
+import { buildNavidromeSourceRevision } from './sourceRevision';
 import { useAudioSettingsStore } from '../../stores/useAudioSettingsStore';
 import { errorMessage } from '../../utils/errorText';
 
@@ -27,22 +26,7 @@ export const buildTranscodeFallbackSource = async (
 ): Promise<TranscodeFallbackSource | null> => {
     throwIfAborted(signal);
     const songKey = getPlaybackSongKey(song);
-    if (isLocalPlaybackSong(song)) {
-        const localSong = localSongs.find(candidate => candidate.id === song.localRef.songId);
-        if (!localSong) return null;
-        const file = await getFileFromLocalSong(localSong);
-        throwIfAborted(signal);
-        if (!file || file.size <= 0) return null;
-        const data = await file.arrayBuffer();
-        throwIfAborted(signal);
-        return {
-            kind: 'local',
-            songKey,
-            sourceRevision: buildLocalSourceRevision(localSong, file),
-            fileName: file.name || localSong.fileName,
-            data,
-        };
-    }
+    if (isLocalPlaybackSong(song)) return null;
 
     if (isNavidromePlaybackSong(song)) {
         const carrier = resolveNavidromePlaybackCarrier(song);

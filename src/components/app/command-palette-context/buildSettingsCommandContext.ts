@@ -9,7 +9,6 @@ import { HIFI_PLATFORM } from '../../modal/settings/pages/hifi/options';
 import { canOfferRuntimeDownload, isRuntimeInstalling } from '../../modal/settings/pages/hifi/runtimeState';
 import { useDesktopSettingsStore } from '../../../stores/useDesktopSettingsStore';
 import { useLocalLibrarySettingsStore } from '../../../stores/useLocalLibrarySettingsStore';
-import { isLocalLibraryAutoScanSupported } from '../../../services/localLibraryAutoScan';
 import { isPlaybackReportReady } from '../../../services/onlineMusic/playbackReportGate';
 import { useLyricSettingsStore } from '../../../stores/useLyricSettingsStore';
 import { useGridViewSettingsStore } from '../../../stores/useGridViewSettingsStore';
@@ -221,7 +220,7 @@ export const buildSettingsCommandContext = (
         toggleShuffleRoundNoRepeat: () => audio.handleToggleShuffleRoundNoRepeat(
             !useAudioSettingsStore.getState().shuffleRoundNoRepeat,
         ),
-        canAutoScanLocalLibrary: isLocalLibraryAutoScanSupported,
+        canAutoScanLocalLibrary: () => false,
         toggleLocalLibraryAutoScan: () => useLocalLibrarySettingsStore.getState().toggleAutoScan(),
         canReportPlayback: () => isPlaybackReportReady(),
         togglePlaybackReport: () => audio.handleToggleNeteaseScrobble(

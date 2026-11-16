@@ -3,7 +3,6 @@ import { RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { useLyricMatchSources } from '../../../../hooks/useLyricMatchSources';
-import { resyncAllFolders } from '../../../../services/localMusicService';
 import { useLyricSettingsStore } from '../../../../stores/useLyricSettingsStore';
 import { setStatusMessage } from '../../../../stores/useStatusMessageStore';
 import { DEFAULT_LOCAL_LYRIC_FORMAT_ORDER, isSameLocalLyricFormatOrder, type LocalLyricFileFormat } from '../../../../utils/lyrics/localLyricFormatOrder';
@@ -68,11 +67,10 @@ const LyricsPage: React.FC = () => {
     const resync = async () => {
         setIsResyncing(true);
         try {
-            const importedSongs = await resyncAllFolders();
             setNeedsResync(false);
             setStatusMessage({
-                type: importedSongs === null ? 'info' : 'success',
-                text: t(importedSongs === null ? 'options.localLyricFormatResyncNoFolders' : 'options.localLyricFormatResyncDone'),
+                type: 'info',
+                text: t('options.localLyricFormatResyncNoFolders'),
             });
         } catch (error) {
             console.error('[LocalLyricFormatOrder] Failed to resync local folders:', error);

@@ -2,7 +2,6 @@ import type { LibraryDirectoryBatchPort } from '../core/directory/directory.cont
 import type { HomeSurfaceProps } from '../../components/app/home/homeSurfaceTypes';
 import { buildLocalQueue } from '../../services/playbackAdapters';
 import { createLocalPlaylist } from '../../services/localPlaylistService';
-import { clearFolderIgnore, deleteFolderSongs, deleteSongsByIds, removeImportedRoot, resyncFolder } from '../../services/localMusicService';
 
 // src/library/app/createLibraryDirectoryBatchPort.ts
 // 把首页 surface 的播放回调与本地曲库服务装配成目录批量动作的端口（照 createLibraryPlaybackPort 的做法）。
@@ -34,13 +33,11 @@ export const createLibraryDirectoryBatchPort = (getSurface: () => DirectoryBatch
         createLocalPlaylist: async (name, songs) => {
             await createLocalPlaylist(name, songs);
         },
-        deleteFolderSongs: folderPath => deleteFolderSongs(folderPath),
-        deleteSongsByIds: songIds => deleteSongsByIds(songIds),
-        clearFolderIgnore: folderPath => clearFolderIgnore(folderPath),
-        resyncFolder: async rootPath => {
-            await resyncFolder(rootPath);
-        },
-        removeImportedRoot: rootPath => removeImportedRoot(rootPath),
+        deleteFolderSongs: async () => {},
+        deleteSongsByIds: async () => {},
+        clearFolderIgnore: async () => {},
+        resyncFolder: async () => {},
+        removeImportedRoot: async () => {},
         refreshLibrary: () => getSurface().onRefreshLocalSongs(),
     };
 };

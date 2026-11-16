@@ -110,6 +110,7 @@ export const STORAGE_KEYS = [
     'web:disable_home_dynamic_background',
     'web:disable_visualizer_geometric_background',
     'web:disable_visualizer_vignette',
+    'web:emby_session',
     'web:enable_home_dynamic_background',
     'web:enable_media_cache',
     'web:enable_now_playing_stage',

@@ -2,7 +2,6 @@ import type { TFunction } from 'i18next';
 import type { UnifiedSong } from '../../types';
 import type { LocalGridViewCollectionDescriptor } from '../core/collection/collection.contract';
 import type { LibraryMutationPort, LibraryPlaylistOption } from '../core/shared/ports.contract';
-import { deleteFolderSongs, resyncAllFolders, resyncFolder } from '../../services/localMusicService';
 import { deleteLocalPlaylist, removeSongsFromLocalPlaylist, updateLocalPlaylist } from '../../services/localPlaylistService';
 import { downloadLocalPlaylistM3u8 } from '../../services/localPlaylistFileService';
 import { getNavidromeConfig, navidromeApi } from '../../services/navidromeService';
@@ -57,22 +56,9 @@ export const createLibraryMutationPort = ({
             }
         },
         matchSong: async (songId) => dialogs.matchSong(songId),
-        resyncFolder: async (collection) => {
-            const importedSongs = await resyncFolder(collection.name);
-            if (importedSongs !== null) {
-                await surface.onRefreshLocalSongs();
-            }
-        },
-        resyncAllFolders: async () => {
-            const importedSongs = await resyncAllFolders();
-            if (importedSongs !== null) {
-                await surface.onRefreshLocalSongs();
-            }
-        },
-        deleteFolder: async (collection) => {
-            await deleteFolderSongs(collection.name);
-            surface.onRefreshLocalSongs();
-        },
+        resyncFolder: async () => {},
+        resyncAllFolders: async () => {},
+        deleteFolder: async () => {},
         renamePlaylist: async (playlistId, name) => {
             await updateLocalPlaylist(playlistId, playlist => ({
                 ...playlist,

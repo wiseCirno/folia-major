@@ -3,8 +3,6 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en.ts';
 import zhCN from './locales/zh-CN.ts';
 import zhTW from 'virtual:folia-locale-zh-TW';
-import ind from './locales/in.ts';
-import vi from './locales/vi.ts';
 import { resolveMissingTranslation } from './missingTranslation';
 import { isPerfCheckSurface } from '../utils/appSurface';
 
@@ -34,11 +32,11 @@ export function flattenLocale(obj: Record<string, any>, prefix = ''): Record<str
 
 const ZH_FALLBACKS: Record<string, string> = flattenLocale(zhCN);
 
-export type AppLanguagePreference = 'system' | 'en' | 'zh-CN' | 'zh-TW' | 'in' | 'vi';
+export type AppLanguagePreference = 'system' | 'en' | 'zh-CN' | 'zh-TW';
 export const APP_LANGUAGE_STORAGE_KEY = 'folia_app_language';
 
 const isSupportedManualLanguage = (value: string | null | undefined): value is Exclude<AppLanguagePreference, 'system'> => (
-  value === 'en' || value === 'zh-CN' || value === 'zh-TW' || value === 'in' || value === 'vi'
+  value === 'en' || value === 'zh-CN' || value === 'zh-TW'
 );
 
 /*
@@ -61,14 +59,6 @@ const normalizeChineseLanguage = (value: string): 'zh-CN' | 'zh-TW' => {
 const normalizeSupportedLanguage = (value: string | null | undefined): Exclude<AppLanguagePreference, 'system'> => {
   if (!value) {
     return 'en';
-  }
-
-  if (value === 'in' || value.toLowerCase().startsWith('id')) {
-    return 'in';
-  }
-
-  if (value.toLowerCase() === 'vi' || value.toLowerCase().startsWith('vi-')) {
-    return 'vi';
   }
 
   if (value.toLowerCase().startsWith('zh')) {
@@ -117,9 +107,7 @@ const syncDocumentLanguage = (value: string | null | undefined) => {
 
 /*
  * Startup and the Settings "follow system" switch both go through this, so a system
- * language maps to the same bundle either way (zh-HK -> zh-TW, id-ID -> in). Letting
- * i18next pick at startup used its own best match instead, which sent zh-HK to zh-CN
- * and id to en.
+ * language maps to the same bundle either way (zh-HK -> zh-TW). Other languages use English.
  */
 const detectSystemLanguage = (): Exclude<AppLanguagePreference, 'system'> => (
   normalizeSupportedLanguage(typeof navigator !== 'undefined' ? (navigator.languages?.[0] ?? navigator.language) : 'en')
@@ -137,19 +125,13 @@ i18n
       },
       'zh-TW': {
         translation: zhTW
-      },
-      in: {
-        translation: ind
-      },
-      vi: {
-        translation: vi
       }
     },
     fallbackLng: 'en',
     parseMissingKeyHandler: (key: string, defaultValue?: string): string => (
       resolveMissingTranslation(ZH_FALLBACKS, key, defaultValue)
     ),
-    supportedLngs: ['en', 'zh-CN', 'zh-TW', 'in', 'vi'],
+    supportedLngs: ['en', 'zh-CN', 'zh-TW'],
     lng: initialLanguagePreference === 'system' ? detectSystemLanguage() : initialLanguagePreference,
     interpolation: {
       escapeValue: false

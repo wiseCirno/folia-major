@@ -380,6 +380,7 @@ export default {
     "shortcuts": "Jump to",
     "wallHint": {
       "guestTitle": "No streaming service connected yet",
+      "deploymentLocked": "This server is set by the deployment and cannot be changed here.",
       "guestBody": "Choose “{{connect}}” in the info strip to sign in, and your playlists, radio and saved albums will fill this wall.",
       "guestBodyWithLocal": "Choose “{{connect}}” in the info strip to sign in, and your playlists, radio and saved albums will fill this wall. Or import a music folder on the {{local}} tab.",
       "reloginTitle": "Your {{provider}} sign-in has expired",
@@ -2050,6 +2051,7 @@ export default {
     "welcomeBack": "Welcome Back",
     "guestTitle": "Try searching a few songs first",
     "guestPrompt": "Sign in to access your playlists, saved albums, and radio.",
+    "deploymentLocked": "This server is set by the deployment and cannot be changed here.",
     "guestPromptProvider": "Sign in with {{provider}} to access your online music library.",
     "accountlessTitle": "{{provider}} has no library yet",
     "accountlessBody": "Playlists, albums, and radio will come with the full source interface in Folium v2.\nFor now, search for songs to play.",
@@ -4957,9 +4959,23 @@ export default {
     "failed": "The cover was not set: {{error}}",
     "notImage": "That file is not an image Folia can read"
   },
+  "emby": {
+    "title": "Emby",
+    "settings": "Emby settings",
+    "serverUrl": "Server URL",
+    "serverUrlPlaceholder": "e.g. http://localhost:8096",
+    "username": "Username",
+    "password": "Password",
+    "login": "Sign in",
+    "loginNote": "Enter the Emby server URL, username and password. The browser connects to that server directly.",
+    "lockedNote": "This Emby server is set by the deployment.",
+    "errorBadCredentials": "The username or password is wrong",
+    "errorNetwork": "The Emby server did not answer",
+    "errorBadServerUrl": "The server URL must start with http:// or https://"
+  },
   "navidrome": {
     "title": "Navi",
-    "enable": "Connect Navidrome (Experimental)",
+    "enable": "Connect Navidrome",
     "settings": "Navidrome Settings",
     "serverUrl": "Server URL",
     "serverUrlPlaceholder": "e.g., http://localhost:4533",

@@ -2,6 +2,8 @@ import { OnlineProviderError } from '../../types/onlineMusic';
 import type { OnlineMusicProvider, OnlineProviderId, ProviderCapabilities } from '../../types/onlineMusic';
 import type { SongResult } from '../../types';
 import { getPlaybackSourceRef } from '../../utils/appPlaybackGuards';
+import { readDeploymentLock } from './deploymentLock';
+import { embyProvider } from './emby/embyProvider';
 import { navidromeProvider } from './navidrome/navidromeProvider';
 
 // src/services/onlineMusic/providerRegistry.ts
@@ -106,4 +108,8 @@ export const requireOnlineMusicProviderForSong = (song: SongResult): OnlineMusic
     return requireOnlineMusicProvider(sourceRef.providerId);
 };
 
-registerOnlineMusicProvider(navidromeProvider);
+const deploymentLock = readDeploymentLock();
+const providersForThisBuild = [navidromeProvider, embyProvider].filter(provider => (
+    !deploymentLock || deploymentLock.platformId === provider.id
+));
+providersForThisBuild.forEach(registerOnlineMusicProvider);
