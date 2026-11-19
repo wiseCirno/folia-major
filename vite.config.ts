@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { type ConfigEnv, type UserConfig, type ViteDevServer } from 'vite';
+import { type ConfigEnv, loadEnv, type UserConfig, type ViteDevServer } from 'vite';
 import react from '@vitejs/plugin-react';
 import { commandPinyinPlugin } from './dev/pinyin/commandPinyinPlugin.mjs';
 import { traditionalLocalePlugin } from './dev/i18n/traditionalLocalePlugin.mjs';
@@ -132,6 +132,14 @@ function devLyricProxyPlugin() {
 }
 
 export default async function viteConfig(_config: ConfigEnv): Promise<UserConfig> {
+  const musicEnv: Partial<Record<string, string>> = loadEnv(_config.mode, __dirname, ['FOLIA_ONLINE_', 'VITE_FOLIA_ONLINE_']);
+  if (Object.keys(musicEnv).some(key => key.startsWith('VITE_FOLIA_ONLINE_'))) {
+    throw new Error('Remove VITE_FOLIA_ONLINE_* variables and use FOLIA_ONLINE_* instead.');
+  }
+  const musicPlatform = (musicEnv.FOLIA_ONLINE_PLATFORM ?? '').trim().toLowerCase();
+  if (musicPlatform && musicPlatform !== 'emby' && musicPlatform !== 'navidrome') {
+    throw new Error('Unsupported FOLIA_ONLINE_PLATFORM.');
+  }
   let commitHash = '';
   if (process.env.VERCEL_GIT_COMMIT_SHA) {
     commitHash = process.env.VERCEL_GIT_COMMIT_SHA.substring(0, 7);
@@ -204,9 +212,7 @@ export default async function viteConfig(_config: ConfigEnv): Promise<UserConfig
 
   return {
     base: process.env.ELECTRON === 'true' ? './' : '/',
-    // Vercel warns that a VITE_ name is shipped to the browser. FOLIA_ONLINE_* is the name to set
-    // there. It is still inlined into the page, because the browser calls the music server itself.
-    envPrefix: ['VITE_', 'FOLIA_'],
+    envPrefix: 'VITE_',
     worker: {
       format: 'es'
     },
@@ -325,6 +331,7 @@ export default async function viteConfig(_config: ConfigEnv): Promise<UserConfig
       })
     ],
     define: {
+      '__FOLIA_ONLINE_PLATFORM__': JSON.stringify(musicPlatform),
       '__COMMIT_HASH__': JSON.stringify(commitHash + commitSuffix),
       '__GIT_BRANCH__': JSON.stringify(gitBranch),
       '__BUILD_REPO__': JSON.stringify(buildRepo),

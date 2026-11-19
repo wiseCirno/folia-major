@@ -1,5 +1,6 @@
 import type {EmbySession} from './embySession';
 import {rememberLockedEmbyUser} from './embySession';
+import {deploymentMusicUrl} from '../deploymentLock';
 import {embySubtitleLrcPath, textSubtitleTarget} from './embyLyrics';
 
 // src/services/onlineMusic/emby/embyApi.ts
@@ -51,7 +52,8 @@ const authHeader = (token?: string): HeadersInit => ({
     ...(token ? { 'X-Emby-Token': token } : {}),
 });
 
-const request = async (session: Pick<EmbySession, 'serverUrl' | 'accessToken'>, path: string, init?: RequestInit): Promise<Response> => {
+const request = async (session: Pick<EmbySession, 'serverUrl' | 'accessToken' | 'locked'>, path: string, init?: RequestInit): Promise<Response> => {
+    if (session.locked) return fetch(deploymentMusicUrl('emby', path), init);
     return await fetch(`${session.serverUrl}${path}`, {
         ...init,
         headers: {...authHeader(session.accessToken), ...init?.headers},
@@ -83,7 +85,7 @@ export const authenticateEmby = async (
 
 const rememberUser = (session: EmbySession, user: EmbyUser): EmbySession => {
     const next = { ...session, userId: user.Id ?? '', username: user.Name || session.username };
-    if (next.userId && next.locked) rememberLockedEmbyUser(next.userId, next.username);
+    if (next.userId && next.locked) rememberLockedEmbyUser(next.userId);
     return next;
 };
 
@@ -226,14 +228,18 @@ export const getEmbyItem = async (session: EmbySession, itemId: string): Promise
 };
 
 export const embyStreamUrl = (session: EmbySession, itemId: string): string => {
-    const params = new URLSearchParams({ static: 'true', api_key: session.accessToken });
-    return `${session.serverUrl}/Audio/${encodeURIComponent(itemId)}/stream?${params.toString()}`;
+    const path = `/Audio/${encodeURIComponent(itemId)}/stream?static=true`;
+    if (session.locked) return deploymentMusicUrl('emby', path);
+    return `${session.serverUrl}${path}&api_key=${encodeURIComponent(session.accessToken)}`;
 };
 
 const embyPictureUrl = (session: EmbySession, imageId: string, imageType: 'Primary' | 'Backdrop', tag?: string): string => {
-    const params = new URLSearchParams({ maxWidth: '600', api_key: session.accessToken });
+    const params = new URLSearchParams({ maxWidth: '600' });
     if (tag) params.set('tag', tag);
-    return `${session.serverUrl}/Items/${encodeURIComponent(imageId)}/Images/${imageType}?${params.toString()}`;
+    const path = `/Items/${encodeURIComponent(imageId)}/Images/${imageType}`;
+    if (session.locked) return deploymentMusicUrl('emby', `${path}?${params}`);
+    params.set('api_key', session.accessToken);
+    return `${session.serverUrl}${path}?${params}`;
 };
 
 /**

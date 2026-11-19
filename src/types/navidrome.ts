@@ -3,6 +3,8 @@ import type { MediaId } from './onlineMusic';
 
 // Navidrome/Subsonic API Configuration
 export interface NavidromeConfig {
+    /** Synthetic config for the same-origin, server-side deployment account. */
+    deploymentProxy?: boolean;
     serverUrl: string;
     username: string;
     // Stored as MD5 hash for token-based auth

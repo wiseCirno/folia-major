@@ -144,6 +144,8 @@ https://github.com/user-attachments/assets/704f195a-2194-434b-86e8-8f36290e5cc4
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/chthollyphile/folia-major) 
 
+锁定 Emby 或 Navidrome 的 Web 部署，见 [Vercel 音乐服务器代理配置](docs/vercel-music-gateway.md)。不要把服务器地址、API key 或密码写到 `VITE_` 变量中。
+
 项目也支持一键部署到 Cloudflare，请参考 Vercel 的部署教程进行相应调整。
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/chthollyphile/folia-major)

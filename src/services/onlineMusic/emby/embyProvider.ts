@@ -32,8 +32,7 @@ import {
     setEmbyFavorite,
     type EmbyItem,
 } from './embyApi';
-import { clearEmbySession, getEmbySession, rememberLockedEmbyToken, rememberLockedEmbyUser, saveEmbySession, type EmbySession } from './embySession';
-import { readDeploymentLock } from '../deploymentLock';
+import { clearEmbySession, getEmbySession, saveEmbySession, type EmbySession } from './embySession';
 
 // src/services/onlineMusic/emby/embyProvider.ts
 // Emby as an Omni platform. The browser talks to the listener's server, or to the one pinned at build time.
@@ -42,7 +41,7 @@ const PROVIDER_ID = 'emby';
 
 const requireSession = async (): Promise<EmbySession> => {
     const stored = getEmbySession();
-    if (!stored?.serverUrl || !stored.accessToken) {
+    if (!stored) {
         throw new OnlineProviderError('auth-required', 'Emby is not configured', PROVIDER_ID);
     }
     return await ensureEmbyUser(stored);
@@ -100,7 +99,7 @@ export const embyProvider: OnlineMusicProvider = {
     shortName: 'Emby',
     shortNameKey: 'emby.title',
     mark: { letter: 'E', color: '#52b54b' },
-    getAvailability: () => ({ configured: Boolean(getEmbySession()?.serverUrl && (getEmbySession()?.accessToken || (locked() && readDeploymentLock()?.username && readDeploymentLock()?.password))) }),
+    getAvailability: () => ({ configured: Boolean(getEmbySession()) }),
     capabilities: {
         search: true,
         playback: true,
@@ -111,7 +110,7 @@ export const embyProvider: OnlineMusicProvider = {
         albums: false,
         artists: false,
         recommendations: true,
-        mutations: true,
+        mutations: !locked(),
         wordByWordLyrics: false,
         likes: true,
         userAlbums: true,
@@ -224,7 +223,7 @@ export const embyProvider: OnlineMusicProvider = {
         async songsShownAs(songs) {
             const session = getEmbySession();
             const answers = new Map<string, UnifiedSong | null>();
-            if (!session?.accessToken) return answers;
+            if (!session) return answers;
             for (const song of songs) {
                 const id = String(song.id);
                 if (song.album?.coverUrl) {
@@ -242,12 +241,12 @@ export const embyProvider: OnlineMusicProvider = {
             return answers;
         },
     },
-    mutations: {
+    ...(locked() ? {} : { mutations: {
         async likeSong(song, liked) {
             const session = await requireSession();
             await setEmbyFavorite(session, songIdOf(song), liked);
         },
-    },
+    } }),
     auth: {
         showsKeptAccountAtStart: true,
         getLoginTexts: () => ({ title: 'emby.settings', note: locked() ? 'emby.lockedNote' : 'emby.loginNote' }),
@@ -287,22 +286,8 @@ export const embyProvider: OnlineMusicProvider = {
             }
         },
         async getLoginStatus() {
-            if (locked()) {
-                const lock = readDeploymentLock();
-                const current = getEmbySession();
-                if (lock && current && !current.accessToken && lock.username && lock.password) {
-                    try {
-                        const signedIn = await authenticateEmby(lock.serverUrl, lock.username, lock.password);
-                        rememberLockedEmbyToken(signedIn.accessToken);
-                        rememberLockedEmbyUser(signedIn.userId, signedIn.username);
-                    } catch (error) {
-                        console.warn('[Emby] locked sign-in failed', error);
-                        return null;
-                    }
-                }
-            }
             const stored = getEmbySession();
-            if (!stored?.serverUrl || !stored.accessToken) return null;
+            if (!stored) return null;
             try {
                 const session = await ensureEmbyUser(stored);
                 return userFrom(session);

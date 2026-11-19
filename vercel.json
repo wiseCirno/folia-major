@@ -1,4 +1,5 @@
 {
   "ignoreCommand": "git rev-parse --verify -q HEAD^ >/dev/null && git diff --quiet HEAD^ HEAD -- . ':(exclude)docs/CODEMAP.md'",
+  "functions": { "api/music.js": { "maxDuration": 300 } },
   "rewrites": []
 }

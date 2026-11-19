@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Reveal, Row, Status, TextField, Toggle } from '@/components/modal/settings/kit/index.ts';
-import { readDeploymentLock } from '@/services/onlineMusic/deploymentLock.ts';
 import { authenticateEmby } from '@/services/onlineMusic/emby/embyApi.ts';
 import { clearEmbySession, getEmbySession, saveEmbySession } from '@/services/onlineMusic/emby/embySession.ts';
 import { O } from './options';
 
 // src/components/modal/settings/pages/integration/EmbyRows.tsx
-// The Emby rows of the 连接与集成 page. A deployment lock shows the pinned server and no form.
+// The Emby rows of the 连接与集成 page; the parent hides them in locked deployments.
 
 export const EmbyRows: React.FC = () => {
     const { t } = useTranslation();
-    const lock = readDeploymentLock();
-    const locked = lock?.platformId === 'emby';
-    const saved = locked ? null : getEmbySession();
-    const [url, setUrl] = useState(locked ? lock?.serverUrl ?? '' : saved?.serverUrl ?? '');
-    const [username, setUsername] = useState(locked ? lock?.username ?? '' : saved?.username ?? '');
+    const saved = getEmbySession();
+    const [url, setUrl] = useState(saved?.serverUrl ?? '');
+    const [username, setUsername] = useState(saved?.username ?? '');
     const [password, setPassword] = useState('');
     const [connected, setConnected] = useState(Boolean(saved?.accessToken));
     const [enabled, setEnabled] = useState(() => localStorage.getItem('emby_enabled') !== 'false');
@@ -24,7 +21,6 @@ export const EmbyRows: React.FC = () => {
         localStorage.setItem('emby_enabled', next ? 'true' : 'false');
         setEnabled(next);
     };
-    if (lock && !locked) return null;
 
     const test = async () => {
         setStatus('testing');
@@ -38,14 +34,6 @@ export const EmbyRows: React.FC = () => {
             setStatus('failed');
         }
     };
-
-    if (locked) {
-        return (
-            <Row option={O.emby} hint={t('emby.lockedNote')}>
-                <Status tone="ok">{lock.serverUrl}</Status>
-            </Row>
-        );
-    }
 
     return (
         <>

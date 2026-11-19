@@ -1,4 +1,4 @@
-import { deploymentLocksPlatform, readDeploymentLock } from '../deploymentLock';
+import { deploymentLocksPlatform } from '../deploymentLock';
 
 // src/services/onlineMusic/emby/embySession.ts
 // The signed-in Emby server. A deployment lock is read from the build and is not written to disk.
@@ -6,18 +6,9 @@ import { deploymentLocksPlatform, readDeploymentLock } from '../deploymentLock';
 const STORAGE_KEY = 'emby_session';
 
 let lockedUserId = '';
-let lockedUsername = '';
-let lockedAccessToken = '';
 
-/** Remembers which Emby user an API key should read. The key itself stays in the build env. */
-export const rememberLockedEmbyUser = (userId: string, username: string): void => {
+export const rememberLockedEmbyUser = (userId: string): void => {
     lockedUserId = userId;
-    lockedUsername = username;
-};
-
-/** Keeps a username-and-password sign-in for this page load. The password is not written down. */
-export const rememberLockedEmbyToken = (accessToken: string): void => {
-    lockedAccessToken = accessToken;
 };
 
 export interface EmbySession {
@@ -25,7 +16,7 @@ export interface EmbySession {
     userId: string;
     username: string;
     accessToken: string;
-    /** True when the token came from the build, so sign-out cannot drop it. */
+    /** True when requests use the shared, server-side deployment account. */
     locked: boolean;
 }
 
@@ -50,13 +41,11 @@ const parseStored = (raw: string | null): EmbySession | null => {
 /** The session to use now. A locked build wins over anything saved in the browser. */
 export const getEmbySession = (): EmbySession | null => {
     if (deploymentLocksPlatform('emby')) {
-        const lock = readDeploymentLock();
-        if (!lock) return null;
         return {
-            serverUrl: lock.serverUrl,
+            serverUrl: '',
             userId: lockedUserId,
-            username: lock.username || lockedUsername || 'Emby',
-            accessToken: lock.apiKey || lockedAccessToken,
+            username: 'Emby',
+            accessToken: '',
             locked: true,
         };
     }

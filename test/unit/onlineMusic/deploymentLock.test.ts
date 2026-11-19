@@ -1,45 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { parseDeploymentLock } from '@/services/onlineMusic/deploymentLock.ts';
+import { deploymentMusicUrl, readDeploymentLock } from '@/services/onlineMusic/deploymentLock.ts';
+import { readMusicConfig } from '../../../api-ts/music';
 import { isEmbyMusicLibrary } from '@/services/onlineMusic/emby/embyApi.ts';
 import { textSubtitleTarget } from '@/services/onlineMusic/emby/embyLyrics.ts';
 
-describe('parseDeploymentLock', () => {
-    it('requires a platform, an http server, and either an API key or a username and password', () => {
-        expect(parseDeploymentLock({})).toBeNull();
-        expect(parseDeploymentLock({
-            VITE_FOLIA_ONLINE_PLATFORM: 'EMBY',
-            VITE_FOLIA_ONLINE_SERVER_URL: 'https://emby.example.com/',
-            VITE_FOLIA_ONLINE_API_KEY: 'key',
-            VITE_FOLIA_ONLINE_USERNAME: 'ada',
-        })).toEqual({
-            platformId: 'emby',
-            serverUrl: 'https://emby.example.com',
-            apiKey: 'key',
-            username: 'ada',
-            password: '',
-        });
-        expect(parseDeploymentLock({
-            VITE_FOLIA_ONLINE_PLATFORM: 'emby',
-            VITE_FOLIA_ONLINE_SERVER_URL: 'emby.example.com',
-            VITE_FOLIA_ONLINE_API_KEY: 'key',
-        })).toBeNull();
-        expect(parseDeploymentLock({
-            VITE_FOLIA_ONLINE_PLATFORM: 'navidrome',
-            VITE_FOLIA_ONLINE_SERVER_URL: 'https://music.example.com',
-            VITE_FOLIA_ONLINE_USERNAME: 'ada',
-            VITE_FOLIA_ONLINE_PASSWORD: 'secret',
-        })).toMatchObject({ platformId: 'navidrome', username: 'ada', password: 'secret', apiKey: '' });
-        expect(parseDeploymentLock({
-            FOLIA_ONLINE_PLATFORM: 'emby',
-            FOLIA_ONLINE_SERVER_URL: 'https://emby.example.com',
-            FOLIA_ONLINE_API_KEY: 'key',
-        })).toMatchObject({ platformId: 'emby', serverUrl: 'https://emby.example.com', apiKey: 'key' });
-        expect(parseDeploymentLock({
-            FOLIA_ONLINE_PLATFORM: 'emby',
-            FOLIA_ONLINE_SERVER_URL: 'https://emby.example.com',
-            FOLIA_ONLINE_USERNAME: 'ada',
-            FOLIA_ONLINE_PASSWORD: 'secret',
-        })).toMatchObject({ platformId: 'emby', apiKey: '', username: 'ada', password: 'secret' });
+describe('deployment lock', () => {
+    it('keeps configuration on the server and produces relative URLs', () => {
+        expect(readDeploymentLock()).toBeNull();
+        expect(deploymentMusicUrl('emby', '/Users')).toBe('/api/music?provider=emby&path=%2FUsers');
+        expect(readMusicConfig({ VITE_FOLIA_ONLINE_PLATFORM: 'emby' })).toBeNull();
+        expect(readMusicConfig({
+            FOLIA_ONLINE_PLATFORM: 'EMBY',
+            FOLIA_ONLINE_SERVER_URL: 'https://emby.example.com/base/',
+            FOLIA_ONLINE_API_KEY: 'test-key',
+        })).toMatchObject({ platform: 'emby', origin: 'https://emby.example.com/base', key: 'test-key' });
     });
 });
 

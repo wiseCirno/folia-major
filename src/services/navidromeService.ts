@@ -30,7 +30,7 @@ import {
     NavidromeServerProfile,
 } from '../types/navidrome';
 import md5 from 'blueimp-md5';
-import { deploymentLocksPlatform, readDeploymentLock } from './onlineMusic/deploymentLock';
+import { deploymentLocksPlatform, deploymentMusicUrl } from './onlineMusic/deploymentLock';
 
 // LocalStorage key for config
 const CONFIG_KEY = 'navidrome_config';
@@ -62,9 +62,7 @@ export const setNavidromeEnabled = (enabled: boolean): void => {
 // Get stored configuration. A pinned build uses the deployment values and does not read a saved login.
 export const getNavidromeConfig = (): NavidromeConfig | null => {
     if (deploymentLocksPlatform('navidrome')) {
-        const lock = readDeploymentLock();
-        if (!lock?.username || !lock.password) return null;
-        return { serverUrl: lock.serverUrl, username: lock.username, passwordHash: lock.password };
+        return { serverUrl: '/api/music', username: 'Navidrome', passwordHash: '', deploymentProxy: true };
     }
     try {
         const stored = localStorage.getItem(CONFIG_KEY);
@@ -202,27 +200,22 @@ const fetchSubsonic = async <T>(
     endpoint: string,
     extraParams?: Record<string, SubsonicParamValue>
 ): Promise<SubsonicResponse<T>> => {
-    const url = new URL(`${config.serverUrl}/rest/${endpoint}`);
-    const authParams = buildAuthParams(config);
-
-    // Add auth params
-    authParams.forEach((value, key) => {
-        url.searchParams.set(key, value);
-    });
+    const params = config.deploymentProxy ? new URLSearchParams() : buildAuthParams(config);
 
     // Add extra params
     if (extraParams) {
         Object.entries(extraParams).forEach(([key, value]) => {
             if (Array.isArray(value)) {
-                value.forEach(item => url.searchParams.append(key, String(item)));
+                value.forEach(item => params.append(key, String(item)));
                 return;
             }
 
-            url.searchParams.set(key, String(value));
+            params.set(key, String(value));
         });
     }
 
-    const response = await fetch(url.toString());
+    const path = `/rest/${endpoint}?${params}`;
+    const response = await fetch(config.deploymentProxy ? deploymentMusicUrl('navidrome', path) : `${config.serverUrl}${path}`);
     if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
     }
@@ -582,6 +575,11 @@ export const navidromeApi = {
 
     // Get streaming URL
     getStreamUrl: (config: NavidromeConfig, songId: string, format?: string): string => {
+        if (config.deploymentProxy) {
+            const params = new URLSearchParams({ id: songId });
+            if (format) params.set('format', format);
+            return deploymentMusicUrl('navidrome', `/rest/stream?${params}`);
+        }
         const url = new URL(`${config.serverUrl}/rest/stream`);
         const authParams = buildStableUrlAuthParams(config, `stream:${songId}:${format || ''}`);
 
@@ -599,6 +597,11 @@ export const navidromeApi = {
 
     // Get cover art URL
     getCoverArtUrl: (config: NavidromeConfig, coverArtId: string, size?: number): string => {
+        if (config.deploymentProxy) {
+            const params = new URLSearchParams({ id: coverArtId });
+            if (size) params.set('size', String(size));
+            return deploymentMusicUrl('navidrome', `/rest/getCoverArt?${params}`);
+        }
         const url = new URL(`${config.serverUrl}/rest/getCoverArt`);
         const authParams = buildStableUrlAuthParams(config, `cover:${coverArtId}:${size || ''}`);
 

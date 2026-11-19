@@ -33,9 +33,13 @@ import {
 
 const PROVIDER_ID = 'navidrome';
 
+import { deploymentLocksPlatform } from '../deploymentLock';
+
+const deploymentLocked = () => deploymentLocksPlatform('navidrome');
+
 const requireConfig = (): NavidromeConfig => {
     const config = getNavidromeConfig();
-    if (!config?.serverUrl || !config.username || !config.passwordHash) {
+    if (!config?.serverUrl || !config.username || (!config.deploymentProxy && !config.passwordHash)) {
         throw new OnlineProviderError('auth-required', 'Navidrome is not configured', PROVIDER_ID);
     }
     return config;
@@ -171,12 +175,12 @@ export const navidromeProvider: OnlineMusicProvider = {
         albums: true,
         artists: true,
         recommendations: false,
-        mutations: true,
+        mutations: !deploymentLocked(),
         wordByWordLyrics: false,
         likes: true,
         userAlbums: true,
-        playlistTrackMutations: true,
-        playbackReports: true,
+        playlistTrackMutations: !deploymentLocked(),
+        playbackReports: !deploymentLocked(),
         songDetail: true,
     },
     normalizeSong: normalizeNavidromeSong,
@@ -322,7 +326,7 @@ export const navidromeProvider: OnlineMusicProvider = {
             return artist ? artistCollection(config, artist) : null;
         },
     },
-    mutations: {
+    ...(deploymentLocked() ? {} : { mutations: {
         async likeSong(song, liked) {
             const config = requireConfig();
             const id = trackIdOf(song);
@@ -352,7 +356,7 @@ export const navidromeProvider: OnlineMusicProvider = {
             if (!playlist) throw new OnlineProviderError('invalid-response', 'Navidrome playlist was not created', PROVIDER_ID);
             return playlistCollection(config, playlist);
         },
-    },
+    } }),
     auth: {
         showsKeptAccountAtStart: true,
         getLoginTexts: () => ({ title: 'navidrome.settings', note: 'navidrome.loginNote' }),
@@ -392,6 +396,7 @@ export const navidromeProvider: OnlineMusicProvider = {
         async getLoginStatus() {
             const config = getNavidromeConfig();
             if (!config?.serverUrl || !config.username) return null;
+            if (config.deploymentProxy && !await navidromeApi.ping(config)) return null;
             return userFromConfig(config);
         },
         async logout() {
