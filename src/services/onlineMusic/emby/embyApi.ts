@@ -184,9 +184,10 @@ export const listEmbyAlbumAudio = (session: EmbySession, albumId: string, limit:
 
 export const listEmbyLatest = (session: EmbySession, includeItemTypes: string, limit: number) => withinMusicLibraries(
     session,
-    '/Items/Latest',
+    '/Items',
     includeItemTypes,
     limit,
+    { SortBy: 'DateCreated', SortOrder: 'Descending' },
 );
 
 export const listEmbySuggestions = async (session: EmbySession, includeItemTypes: string, limit: number) => {

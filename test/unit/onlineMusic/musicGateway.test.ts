@@ -40,6 +40,12 @@ describe('same-origin music gateway', () => {
             calls.push({ url, token, range: req.headers.range });
             if (url === '/base/Users/AuthenticateByName') {
                 res.end(json({ AccessToken: 'private-token', User: { Id: 'real-id', Name: 'real-user' } }));
+            } else if (url.startsWith('/base/Users/real-id/Items?')) {
+                const params = new URL(url, 'http://fixture.invalid').searchParams;
+                if (params.get('ParentId') === 'music' && params.get('IncludeItemTypes') === 'Audio'
+                    && params.get('SortBy') === 'DateCreated' && params.get('SortOrder') === 'Descending') {
+                    res.end(json({ Items: [{ Id: 'song', Type: 'Audio', Name: 'Latest' }] }));
+                } else res.writeHead(400).end();
             } else if (url.startsWith('/base/Users/real-id/Views')) {
                 res.end(json({ Items: [{ Id: 'music', Name: 'Music', CollectionType: 'music', Path: '/private', AccessToken: 'private-token' }, { Id: 'video', CollectionType: 'movies' }] }));
             } else if (url === '/base/Users/real-id/Items/song') {
@@ -53,10 +59,13 @@ describe('same-origin music gateway', () => {
         expect(await (await request('/Users/deployment/Views?api_key=client')).json()).toEqual({ Items: [{ Id: 'music', Name: 'Music', CollectionType: 'music' }] });
         const audio = await request('/Audio/song/stream', { headers: { Range: 'bytes=1-2', Authorization: 'client' } });
         expect(audio.status).toBe(206);
+        expect(audio.headers.get('cache-control')).toBe('private, no-store');
         expect(audio.headers.get('content-range')).toBe('bytes 1-2/4');
         expect(await audio.text()).toBe('bc');
         expect(calls.at(-1)).toEqual({ url: '/base/Audio/song/stream?static=true', token: 'private-token', range: 'bytes=1-2' });
         expect(calls.filter(call => call.url.endsWith('/AuthenticateByName'))).toHaveLength(1);
+        const latest = await (await request('/Users/deployment/Items?IncludeItemTypes=Audio&ParentId=music&Recursive=true&Limit=12&SortBy=DateCreated&SortOrder=Descending')).json();
+        expect(latest).toMatchObject({ Items: [{ Id: 'song', Type: 'Audio' }] });
         expect((await request('/Users/deployment/FavoriteItems/song', { method: 'POST' })).status).toBe(405);
         expect((await request('/Users/other/Items')).status).toBe(404);
     });
@@ -81,11 +90,15 @@ describe('same-origin music gateway', () => {
         expect(details).not.toContain('/private/');
         const cover = await request('/Items/song/Images/Primary?tag=v1');
         expect(cover.headers.get('content-type')).toBe('image/png');
+        expect(cover.headers.get('cache-control')).toBe('private, max-age=3600');
         expect(await cover.text()).toBe('image');
+        const unversionedCover = await request('/Items/song/Images/Primary');
+        expect(unversionedCover.headers.get('cache-control')).toBe('private, max-age=300');
+        await unversionedCover.text();
         const lyric = await request('/Videos/song/source/Subtitles/1/Stream.lrc');
         expect(lyric.headers.get('content-type')).toBe('text/plain; charset=utf-8');
         expect(await lyric.text()).toBe('[00:00.00]Test');
-        expect(tokens).toHaveLength(6);
+        expect(tokens).toHaveLength(8);
         expect(new Set(tokens)).toEqual(new Set(['server-key']));
     });
 

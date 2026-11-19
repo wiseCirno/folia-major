@@ -200,24 +200,27 @@ export const embyProvider: OnlineMusicProvider = {
     recommendations: {
         async getDailySongs() {
             const session = await requireSession();
-            const suggested = await listEmbySuggestions(session, 'Audio', 30);
-            const items = suggested.items.length > 0 ? suggested.items : (await listEmbyLatest(session, 'Audio', 30)).items;
+            const suggested = await listEmbySuggestions(session, 'Audio', 30).catch(() => null);
+            const items = suggested?.items.length ? suggested.items : (await listEmbyLatest(session, 'Audio', 30)).items;
             return items.map(item => toSong(session, item));
         },
     },
     explore: {
         async getFeed() {
             const session = await requireSession();
-            const [latestSongs, latestAlbums, suggestions] = await Promise.all([
+            const results = await Promise.allSettled([
                 listEmbyLatest(session, 'Audio', 12),
                 listEmbyLatest(session, 'MusicAlbum', 12),
                 listEmbySuggestions(session, 'Audio', 12),
             ]);
+            const firstFailure = results.find(result => result.status === 'rejected');
+            const [latestSongs, latestAlbums, suggestions] = results.map(result => result.status === 'fulfilled' ? result.value.items : []);
             const sections = [
-                { id: 'latest-songs', title: i18n.t('emby.latestSongs'), items: latestSongs.items.map(item => ({ kind: 'song' as const, song: toSong(session, item) })) },
-                { id: 'latest-albums', title: i18n.t('emby.latestAlbums'), items: latestAlbums.items.map(item => ({ kind: 'collection' as const, collection: albumCollection(session, item) })) },
-                { id: 'suggestions', title: i18n.t('emby.suggestions'), items: suggestions.items.map(item => ({ kind: 'song' as const, song: toSong(session, item) })) },
+                { id: 'latest-songs', title: i18n.t('emby.latestSongs'), items: latestSongs.map(item => ({ kind: 'song' as const, song: toSong(session, item) })) },
+                { id: 'latest-albums', title: i18n.t('emby.latestAlbums'), items: latestAlbums.map(item => ({ kind: 'collection' as const, collection: albumCollection(session, item) })) },
+                { id: 'suggestions', title: i18n.t('emby.suggestions'), items: suggestions.map(item => ({ kind: 'song' as const, song: toSong(session, item) })) },
             ].filter(section => section.items.length > 0);
+            if (!sections.length && firstFailure) throw firstFailure.reason;
             return { sections, refreshReadsAnew: true };
         },
         async songsShownAs(songs) {

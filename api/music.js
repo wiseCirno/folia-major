@@ -76,6 +76,10 @@ export function resolveMusicRoute(platform, input) {
         const types = supplied.get('IncludeItemTypes')?.split(',') ?? [];
         if (!types.length || types.some(type => type !== 'Audio' && type !== 'MusicAlbum'))
             return null;
+        if (path === '/Users/deployment/Items' && supplied.get('SortBy') === 'DateCreated' && supplied.get('SortOrder') === 'Descending') {
+            params.set('SortBy', 'DateCreated');
+            params.set('SortOrder', 'Descending');
+        }
         params.set('IncludeItemTypes', types.join(','));
         if (!params.has('Limit'))
             params.set('Limit', '100');
@@ -266,6 +270,10 @@ export default async function music(req, res) {
         if ((route.kind === 'image' && !isImage) || (route.kind === 'audio' && !isAudio)) {
             await response.body?.cancel();
             return sendJson(res, 502, { error: 'unexpected-media-type' });
+        }
+        if (route.kind === 'image' && response.status === 200) {
+            const maxAge = config.platform === 'emby' && route.params.has('tag') ? 3600 : 300;
+            res.setHeader('Cache-Control', `private, max-age=${maxAge}`);
         }
         res.statusCode = response.status;
         res.setHeader('Content-Type', route.kind === 'lyrics' ? 'text/plain; charset=utf-8' : type);
